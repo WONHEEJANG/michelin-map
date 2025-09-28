@@ -99,6 +99,14 @@ const RestaurantFilter = ({
       return matchesRating && matchesCategory && matchesPrice;
     });
 
+    console.log(`🔍 필터링된 데이터 확인:`, {
+      totalCount: filtered.length,
+      firstRestaurant: filtered[0] ? {
+        name: filtered[0].name,
+        hasImages: !!filtered[0].images,
+        imagesLength: filtered[0].images?.length
+      } : null
+    });
     onFilterChange(filtered);
   }, [selectedRating, selectedCategory, selectedPrice, restaurants, onFilterChange]);
 

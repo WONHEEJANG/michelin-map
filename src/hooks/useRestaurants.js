@@ -26,6 +26,17 @@ export const useRestaurants = () => {
       }
       
       console.log(`✅ ${data.length}개 레스토랑 데이터 로드 완료`);
+      
+      // 첫 번째 레스토랑의 images 필드 확인
+      if (data.length > 0) {
+        console.log(`🔍 첫 번째 레스토랑 데이터 확인:`, {
+          name: data[0].name,
+          hasImages: !!data[0].images,
+          imagesLength: data[0].images?.length,
+          firstImage: data[0].images?.[0]
+        });
+      }
+      
       setRestaurants(data);
       
     } catch (err) {

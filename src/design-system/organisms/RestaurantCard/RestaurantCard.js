@@ -95,11 +95,202 @@ const RestaurantCardContainer = styled.div`
   width: 100%;
 `;
 
+const ImageContainer = styled.div`
+  width: 100%;
+  height: 200px;
+  margin-bottom: ${spacing[4]};
+  border-radius: ${borderRadius.lg};
+  overflow: hidden;
+  background: ${colors.gray[100]};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const RestaurantImage = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+  
+  &:hover {
+    transform: scale(1.05);
+  }
+`;
+
+const ImagePlaceholder = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: ${colors.text.tertiary};
+  font-size: ${typography.fontSize.sm};
+  gap: ${spacing[2]};
+`;
+
+const ImageGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: ${spacing[2]};
+  margin-bottom: ${spacing[4]};
+`;
+
+const GridImage = styled.img`
+  width: 100%;
+  height: 80px;
+  object-fit: cover;
+  border-radius: ${borderRadius.md};
+  transition: transform 0.3s ease;
+  cursor: pointer;
+  
+  &:hover {
+    transform: scale(1.05);
+  }
+`;
+
+const ImageModal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: ${spacing[4]};
+`;
+
+const ModalImage = styled.img`
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: ${borderRadius.lg};
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+`;
+
+const ModalCloseButton = styled(Button)`
+  position: absolute;
+  top: ${spacing[4]};
+  right: ${spacing[4]};
+  background: rgba(255, 255, 255, 0.9);
+  color: ${colors.text.primary};
+  z-index: 10001;
+`;
+
+const ImageCounter = styled.div`
+  position: absolute;
+  bottom: ${spacing[4]};
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: ${spacing[2]} ${spacing[4]};
+  border-radius: ${borderRadius.full};
+  font-size: ${typography.fontSize.sm};
+`;
+
+const NavigationButton = styled(Button).withConfig({
+  shouldForwardProp: (prop) => !['direction'].includes(prop),
+})`
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.9);
+  color: ${colors.text.primary};
+  z-index: 10001;
+  width: 48px;
+  height: 48px;
+  border-radius: ${borderRadius.full};
+  
+  ${props => props.$direction === 'left' && `left: ${spacing[4]};`}
+  ${props => props.$direction === 'right' && `right: ${spacing[4]};`}
+  
+  &:hover {
+    background: rgba(255, 255, 255, 1);
+  }
+`;
+
 const RestaurantCard = ({ 
   restaurant, 
   onClose, 
   onSelect 
 }) => {
+  const [selectedImageIndex, setSelectedImageIndex] = React.useState(null);
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [loadedImages, setLoadedImages] = React.useState([]); // 성공적으로 로드된 이미지들
+
+  // loadedImages 상태 변경 디버깅
+  React.useEffect(() => {
+    console.log(`🔍 ${restaurant.name} loadedImages 상태 변경:`, loadedImages.length, '개', loadedImages);
+  }, [loadedImages, restaurant.name]);
+
+  // 레스토랑이 변경될 때 loadedImages 초기화
+  React.useEffect(() => {
+    setLoadedImages([]);
+    setSelectedImageIndex(null); // 선택된 이미지 인덱스도 초기화
+  }, [restaurant]);
+
+  // 이미지 로딩을 처리하는 useEffect
+  React.useEffect(() => {
+    const availableImages = getAvailableImages(restaurant);
+    if (availableImages.length === 0) return;
+
+    console.log(`🔄 ${restaurant.name} 이미지 로딩 시작:`, availableImages.length, '개');
+
+    // 50개까지 시도하여 로드
+    const imagesToLoad = availableImages.slice(0, 50);
+    let loadedCount = 0;
+
+    imagesToLoad.forEach((imagePath, index) => {
+      const img = new Image();
+      img.onload = () => {
+        console.log(`✅ 이미지 로딩 성공: ${imagePath}`);
+        setLoadedImages(prev => {
+          if (!prev.includes(imagePath)) {
+            const newLoadedImages = [...prev, imagePath];
+            console.log(`📸 ${restaurant.name} 로드된 이미지 업데이트:`, newLoadedImages.length, '개');
+            return newLoadedImages;
+          }
+          return prev;
+        });
+      };
+      img.onerror = () => {
+        console.log(`❌ 이미지 로딩 실패: ${imagePath}`);
+      };
+      img.src = imagePath;
+    });
+  }, [restaurant]);
+  // JSON 데이터에서 이미지 경로들을 가져오는 함수
+  const getAvailableImages = (restaurant) => {
+    console.log(`🔍 ${restaurant.name} 이미지 데이터 확인:`, {
+      hasImages: !!restaurant.images,
+      isArray: Array.isArray(restaurant.images),
+      length: restaurant.images?.length,
+      firstImage: restaurant.images?.[0]
+    });
+    
+    // JSON 데이터에 images 배열이 있으면 사용
+    if (restaurant.images && Array.isArray(restaurant.images) && restaurant.images.length > 0) {
+      console.log(`📸 ${restaurant.name} JSON 이미지 사용:`, restaurant.images.length, '개');
+      return restaurant.images.map(img => `/restaurant_images/${img.filename}`);
+    }
+    
+    // JSON에 images가 없으면 기존 방식으로 파일명 생성
+    console.log(`🔍 ${restaurant.name} 파일명 매칭 시도`);
+    const sanitizedName = restaurant.name.replace(/\s+/g, '_');
+    const possibleImages = [];
+    for (let i = 1; i <= 12; i++) {
+      const paddedNumber = i.toString().padStart(2, '0');
+      possibleImages.push(`${sanitizedName}_${paddedNumber}.jpg`);
+      possibleImages.push(`${sanitizedName}_${paddedNumber}.jpeg`);
+      possibleImages.push(`${sanitizedName}_${paddedNumber}.png`);
+    }
+    return possibleImages.map(filename => `/restaurant_images/${filename}`);
+  };
+
   const getRatingIcon = (rating) => {
     if (rating.includes('3 Stars')) return '⭐⭐⭐';
     if (rating.includes('2 Stars')) return '⭐⭐';
@@ -120,6 +311,77 @@ const RestaurantCard = ({
     }
   };
 
+  const handleImageClick = (index) => {
+    // loadedImages에서 해당 인덱스의 이미지를 찾아서 모달에서 올바른 인덱스로 설정
+    const actualIndex = loadedImages.findIndex(img => img === loadedImages[index]);
+    setSelectedImageIndex(actualIndex >= 0 ? actualIndex : index);
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedImageIndex(null);
+  };
+
+  const handlePreviousImage = () => {
+    setSelectedImageIndex(prev => 
+      prev > 0 ? prev - 1 : loadedImages.length - 1
+    );
+  };
+
+  const handleNextImage = () => {
+    setSelectedImageIndex(prev => 
+      prev < loadedImages.length - 1 ? prev + 1 : 0
+    );
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      handleModalClose();
+    } else if (e.key === 'ArrowLeft') {
+      handlePreviousImage();
+    } else if (e.key === 'ArrowRight') {
+      handleNextImage();
+    }
+  };
+
+  // 이미지 렌더링 함수
+  const renderImages = () => {
+    const availableImages = getAvailableImages(restaurant);
+    console.log(`📸 ${restaurant.name} 렌더링할 이미지:`, availableImages);
+    
+    // 이미지가 없으면 플레이스홀더 표시
+    if (availableImages.length === 0) {
+      return (
+        <ImageContainer>
+          <ImagePlaceholder>
+            <span>🍽️</span>
+            <span>이미지 준비 중</span>
+          </ImagePlaceholder>
+        </ImageContainer>
+      );
+    }
+
+    // 카드에서는 성공한 이미지 중 처음 4개만 표시
+    const cardImagesToShow = loadedImages.slice(0, 4);
+    
+    return (
+      <ImageGrid>
+        {cardImagesToShow.map((imagePath, index) => {
+          return (
+            <GridImage
+              key={index}
+              src={imagePath}
+              alt={`${restaurant.name} 음식점 이미지 ${index + 1}`}
+              onClick={() => handleImageClick(index)}
+            />
+          );
+        })}
+      </ImageGrid>
+    );
+  };
+
+
   return (
     <RestaurantCardContainer>
       <Card 
@@ -127,6 +389,8 @@ const RestaurantCard = ({
         onClick={handleCardClick}
         style={{ cursor: 'pointer' }}
       >
+        {renderImages()}
+        
         <RestaurantHeader>
           <RestaurantName>{restaurant.name}</RestaurantName>
           <RatingBadge rating={restaurant.rating}>
@@ -173,6 +437,64 @@ const RestaurantCard = ({
           ✕
         </CloseButton>
       )}
+      
+      {/* 이미지 확대 모달 */}
+      {isModalOpen && selectedImageIndex !== null && (
+        <ImageModal 
+          onClick={handleModalClose}
+          onKeyDown={handleKeyDown}
+          tabIndex={0}
+        >
+          <ModalImage
+            src={loadedImages[selectedImageIndex]}
+            alt={`${restaurant.name} 음식점 이미지 ${selectedImageIndex + 1}`}
+            onClick={(e) => e.stopPropagation()}
+          />
+          
+          <ModalCloseButton
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleModalClose();
+            }}
+          >
+            ✕
+          </ModalCloseButton>
+          
+          {loadedImages.length > 0 && (
+            <>
+              <NavigationButton
+                variant="ghost"
+                size="sm"
+                direction="left"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePreviousImage();
+                }}
+              >
+                ‹
+              </NavigationButton>
+              
+              <NavigationButton
+                variant="ghost"
+                size="sm"
+                direction="right"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleNextImage();
+                }}
+              >
+                ›
+              </NavigationButton>
+              
+              <ImageCounter>
+                {selectedImageIndex + 1} / {loadedImages.length}
+              </ImageCounter>
+            </>
+          )}
+        </ImageModal>
+      )}
     </RestaurantCardContainer>
   );
 };
@@ -185,6 +507,12 @@ RestaurantCard.propTypes = {
     price: PropTypes.string.isRequired,
     rating: PropTypes.string.isRequired,
     url: PropTypes.string.isRequired,
+    images: PropTypes.arrayOf(PropTypes.shape({
+      url: PropTypes.string,
+      local_path: PropTypes.string,
+      filename: PropTypes.string.isRequired,
+    })),
+    image_count: PropTypes.number,
   }).isRequired,
   onClose: PropTypes.func,
   onSelect: PropTypes.func,

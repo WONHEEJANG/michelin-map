@@ -327,6 +327,11 @@ const Map = ({
           // 마커 클릭 이벤트
           window.kakao.maps.event.addListener(marker, 'click', () => {
             if (onRestaurantSelect) {
+              console.log(`🎯 마커 클릭: ${restaurant.name}`, {
+                hasImages: !!restaurant.images,
+                imagesLength: restaurant.images?.length,
+                firstImage: restaurant.images?.[0]
+              });
               onRestaurantSelect(restaurant);
             }
           });
@@ -335,7 +340,7 @@ const Map = ({
           markersRef.current.push(marker);
           addedCount++;
           
-          // 좌표가 변환된 음식점을 배열에 추가
+          // 좌표가 변환된 음식점을 배열에 추가 (images 필드 포함)
           restaurantsWithCoords.push({
             ...restaurant,
             lat: coordinates.lat,
