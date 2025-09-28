@@ -1,46 +1,77 @@
 // 주소를 좌표로 변환하는 유틸리티 함수들
 
-// 서울 구별 대략적인 중심 좌표
-const districtCoords = {
-  '강남구': { lat: 37.5172, lng: 127.0473 },
-  '서초구': { lat: 37.4837, lng: 127.0324 },
-  '중구': { lat: 37.5636, lng: 126.9970 },
-  '종로구': { lat: 37.5735, lng: 126.9788 },
-  '마포구': { lat: 37.5663, lng: 126.9019 },
-  '용산구': { lat: 37.5384, lng: 126.9654 },
-  '성동구': { lat: 37.5636, lng: 127.0365 },
-  '송파구': { lat: 37.5145, lng: 127.1058 },
-  '영등포구': { lat: 37.5264, lng: 126.8962 },
-  '광진구': { lat: 37.5384, lng: 127.0823 },
-  '서대문구': { lat: 37.5791, lng: 126.9368 },
-  '성북구': { lat: 37.5894, lng: 127.0167 },
-  '강동구': { lat: 37.5301, lng: 127.1238 },
-  '강서구': { lat: 37.5509, lng: 126.8226 },
-  '관악구': { lat: 37.4784, lng: 126.9516 },
-  '금천구': { lat: 37.4519, lng: 126.9020 },
-  '노원구': { lat: 37.6542, lng: 127.0568 },
-  '도봉구': { lat: 37.6688, lng: 127.0471 },
-  '동대문구': { lat: 37.5838, lng: 127.0507 },
-  '동작구': { lat: 37.5124, lng: 126.9395 },
-  '은평구': { lat: 37.6028, lng: 126.9291 }
+// 주소 정규화 함수
+const normalizeAddress = (address) => {
+  if (!address) return null;
+  
+  // 영어 주소를 한국어로 변환
+  let normalizedAddress = address
+    .replace(/Seoul, \d+, 한국/g, '') // Seoul, 03930, 한국 제거
+    .replace(/Seoul/g, '') // Seoul 제거
+    .replace(/, \d{5}, 한국/g, '') // , 03930, 한국 제거
+    .replace(/, 한국/g, '') // , 한국 제거
+    .trim();
+  
+  // 서울이 앞에 없는 경우 추가
+  if (!normalizedAddress.includes('서울') && !normalizedAddress.includes('Seoul')) {
+    normalizedAddress = '서울특별시 ' + normalizedAddress;
+  }
+  
+  // 이미 서울특별시가 포함된 경우 중복 제거
+  if (normalizedAddress.includes('서울특별시') && normalizedAddress.split('서울특별시').length > 2) {
+    normalizedAddress = normalizedAddress.replace(/서울특별시\s*/, '').trim();
+    normalizedAddress = '서울특별시 ' + normalizedAddress;
+  }
+  
+  return normalizedAddress;
 };
 
-// 주소에서 구 정보를 추출하여 좌표 반환
+// 카카오맵 Geocoder를 사용한 정확한 주소-좌표 변환
 export const geocodeAddress = (address) => {
-  if (!address) return null;
-
-  // 주소에서 구 정보 찾기
-  for (const [district, coords] of Object.entries(districtCoords)) {
-    if (address.includes(district)) {
-      // 구 내에서 랜덤한 위치 생성 (더 정확한 위치를 위해)
-      const lat = coords.lat + (Math.random() - 0.5) * 0.01;
-      const lng = coords.lng + (Math.random() - 0.5) * 0.01;
-      return { lat, lng };
+  return new Promise((resolve) => {
+    if (!address || !window.kakao || !window.kakao.maps || !window.kakao.maps.services) {
+      console.log('카카오맵 API 또는 주소가 없음:', address);
+      resolve(null);
+      return;
     }
-  }
 
-  // 구를 찾지 못한 경우 서울 중심 좌표 반환
-  return { lat: 37.5665, lng: 126.9780 };
+    // 주소 정규화
+    const normalizedAddress = normalizeAddress(address);
+    console.log(`주소 정규화: ${address} → ${normalizedAddress}`);
+
+    // 주소-좌표 변환 객체를 생성합니다
+    const geocoder = new window.kakao.maps.services.Geocoder();
+
+    // 주소로 좌표를 검색합니다
+    geocoder.addressSearch(normalizedAddress, (result, status) => {
+      // 정상적으로 검색이 완료됐으면
+      if (status === window.kakao.maps.services.Status.OK) {
+        // 여러 결과 중 가장 정확한 결과 선택
+        let bestResult = result[0];
+        
+        // 도로명 주소가 있는 경우 우선 선택
+        for (const item of result) {
+          if (item.road_address && item.road_address.building_name) {
+            bestResult = item;
+            break;
+          }
+        }
+        
+        const coords = {
+          lat: parseFloat(bestResult.y),
+          lng: parseFloat(bestResult.x)
+        };
+        
+        console.log(`✅ 정확한 좌표 변환: ${normalizedAddress} → (${coords.lat}, ${coords.lng})`);
+        console.log(`선택된 결과:`, bestResult);
+        resolve(coords);
+      } else {
+        console.log(`❌ 좌표 변환 실패: ${normalizedAddress} - ${status}`);
+        // 실패 시 서울 중심 좌표 반환
+        resolve({ lat: 37.5665, lng: 126.9780 });
+      }
+    });
+  });
 };
 
 // 카카오맵 LatLng 객체 생성

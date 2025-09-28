@@ -273,15 +273,15 @@ const MichelinMap = () => {
   const getMarkerImage = (rating) => {
     if (!window.kakao || !window.kakao.maps) return null;
     
-    // 4등급 체계: 3, 2, 1, 기타 (bib, small, shop, 0)
-    const colors = {
-      '3 Stars': '#003B99',  // 가장 진한 파란색
-      '2 Stars': '#66A1FF',  // 진한 파란색
-      '1 Star': '#8FBBFF',   // 중간 파란색
-      '기타': '#E5EFFF'      // 가장 연한 파란색 (bib, small, shop, 0)
-    };
+        // 4등급 체계: 3, 2, 1, 기타 (bib, small, shop, 0)
+        const colors = {
+          '3 Stars': '#D10F0F',  // 가장 진한 빨간색
+          '2 Stars': '#E24949',  // 진한 빨간색
+          '1 Star': '#FFB2B2',   // 중간 빨간색
+          '기타': '#B3B3B3'      // 가장 연한 빨간색 (bib, small, shop, 0)
+        };
 
-    let color = '#E5EFFF'; // 기본값: 기타 등급
+    let color = '#B3B3B3'; // 기본값: 기타 등급
     if (rating.includes('3 Stars')) {
       color = colors['3 Stars'];
     } else if (rating.includes('2 Stars')) {

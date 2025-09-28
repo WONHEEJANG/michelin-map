@@ -5,10 +5,10 @@ const RestaurantCard = ({ restaurant, onClose, onSelect }) => {
   const getRatingColor = (rating) => {
     // 4등급 체계: 3, 2, 1, 기타 (bib, small, shop, 0)
     const colors = {
-      '3 Stars': '#003B99',  // 가장 진한 파란색
-      '2 Stars': '#66A1FF',  // 진한 파란색
-      '1 Star': '#8FBBFF',   // 중간 파란색
-      '기타': '#E5EFFF'      // 가장 연한 파란색 (bib, small, shop, 0)
+      '3 Stars': '#D10F0F',  // 가장 진한 빨간색
+      '2 Stars': '#E24949',  // 진한 빨간색
+      '1 Star': '#FFB2B2',   // 중간 빨간색
+      '기타': '#B3B3B3'      // 가장 연한 빨간색 (bib, small, shop, 0)
     };
 
     if (rating.includes('3 Stars')) {
@@ -29,6 +29,11 @@ const RestaurantCard = ({ restaurant, onClose, onSelect }) => {
     if (rating.includes('Bib Gourmand')) return '🍽️';
     if (rating.includes('Small Shop')) return '🏪';
     return '📍';
+  };
+
+  const getDisplayRating = (rating) => {
+    // Small Shop 제거
+    return rating.replace(', Small Shop', '').replace('Small Shop, ', '').trim();
   };
 
   const handleCardClick = () => {
@@ -54,7 +59,7 @@ const RestaurantCard = ({ restaurant, onClose, onSelect }) => {
           className="rating-badge"
           style={{ backgroundColor: getRatingColor(restaurant.rating) }}
         >
-          {getRatingIcon(restaurant.rating)} {restaurant.rating}
+          {getRatingIcon(restaurant.rating)} {getDisplayRating(restaurant.rating)}
         </span>
       </div>
       
