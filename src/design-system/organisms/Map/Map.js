@@ -75,12 +75,16 @@ const LoadingProgress = styled.div`
   text-align: center;
 `;
 
-const Map = ({ 
+const Map = ({
   restaurants = [],
   onRestaurantSelect,
   onLocationUpdate,
   onFilterToggle,
   onMapClick,
+  onNearbyToggle,
+  onMapReady,
+  onRestaurantsWithCoords,
+  onMarkersLoaded,
   className 
 }) => {
   const mapRef = useRef(null);
@@ -257,12 +261,30 @@ const Map = ({
       console.log('현재 줌 레벨:', level);
     });
 
+    // 지도 이동 이벤트 (드래그, 줌 등)
+    window.kakao.maps.event.addListener(mapInstance.current, 'dragend', () => {
+      if (onMapReady) {
+        onMapReady(mapInstance.current);
+      }
+    });
+
+    window.kakao.maps.event.addListener(mapInstance.current, 'zoom_changed', () => {
+      if (onMapReady) {
+        onMapReady(mapInstance.current);
+      }
+    });
+
     // 지도 클릭 이벤트
     window.kakao.maps.event.addListener(mapInstance.current, 'click', () => {
       if (onMapClick) {
         onMapClick();
       }
     });
+
+    // 맵 초기화 완료 시 부모에게 전달
+    if (onMapReady) {
+      onMapReady(mapInstance.current);
+    }
   }, [checkKakaoAPI]);
 
   // 마커들을 지도에 추가
@@ -286,6 +308,7 @@ const Map = ({
 
     // 레스토랑 마커들 추가
     let addedCount = 0;
+    const restaurantsWithCoords = [];
     
     for (let i = 0; i < restaurants.length; i++) {
       const restaurant = restaurants[i];
@@ -312,6 +335,13 @@ const Map = ({
           markersRef.current.push(marker);
           addedCount++;
           
+          // 좌표가 변환된 음식점을 배열에 추가
+          restaurantsWithCoords.push({
+            ...restaurant,
+            lat: coordinates.lat,
+            lng: coordinates.lng
+          });
+          
           console.log(`마커 추가: ${restaurant.name} (${coordinates.lat}, ${coordinates.lng})`);
         } else {
           console.log(`좌표 변환 실패: ${restaurant.name}`);
@@ -324,7 +354,18 @@ const Map = ({
     console.log(`총 ${addedCount}개 마커 추가됨`);
     setIsLoadingMarkers(false);
     setMarkersLoaded(true);
-  }, [restaurants, onRestaurantSelect, getMarkerImage, checkKakaoAPI]);
+    
+    // 좌표가 있는 음식점들을 부모에게 전달
+    if (onRestaurantsWithCoords) {
+      console.log(`좌표가 변환된 음식점 ${restaurantsWithCoords.length}개를 부모에게 전달`);
+      onRestaurantsWithCoords(restaurantsWithCoords);
+    }
+    
+    // 마커 로딩 완료를 부모에게 알림
+    if (onMarkersLoaded) {
+      onMarkersLoaded(true);
+    }
+  }, [restaurants, onRestaurantSelect, getMarkerImage, checkKakaoAPI, onRestaurantsWithCoords, onMarkersLoaded]);
 
   // 지도 초기화 및 마커 추가
   useEffect(() => {
@@ -408,6 +449,16 @@ const Map = ({
         >
           {isGettingLocation ? '위치 확인 중...' : '내 위치'}
         </ControlButton>
+        
+        <ControlButton
+          variant="tertiary"
+          size="sm"
+          onClick={onNearbyToggle}
+          disabled={!markersLoaded}
+          icon={<span>🍽️</span>}
+        >
+          {markersLoaded ? '내 주변 미쉐린' : '로딩 중...'}
+        </ControlButton>
       </ControlButtons>
       
       {locationError && (
@@ -425,6 +476,10 @@ Map.propTypes = {
   onLocationUpdate: PropTypes.func,
   onFilterToggle: PropTypes.func,
   onMapClick: PropTypes.func,
+  onNearbyToggle: PropTypes.func,
+  onMapReady: PropTypes.func,
+  onRestaurantsWithCoords: PropTypes.func,
+  onMarkersLoaded: PropTypes.func,
   className: PropTypes.string,
 };
 

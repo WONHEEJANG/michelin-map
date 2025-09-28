@@ -61,6 +61,16 @@ const StyledButton = styled.button.withConfig({
             background-color: ${colors.primary[50]};
           }
         `;
+      case 'tertiary':
+        return `
+          background-color: ${colors.gray[100]};
+          color: ${colors.text.primary};
+          border-color: ${colors.gray[200]};
+          &:hover:not(:disabled) {
+            background-color: ${colors.gray[200]};
+            border-color: ${colors.gray[300]};
+          }
+        `;
       case 'danger':
         return `
           background-color: ${colors.semantic.error};
@@ -125,7 +135,7 @@ const Button = ({
 
 Button.propTypes = {
   children: PropTypes.node.isRequired,
-  variant: PropTypes.oneOf(['primary', 'secondary', 'ghost', 'danger']),
+  variant: PropTypes.oneOf(['primary', 'secondary', 'ghost', 'tertiary', 'danger']),
   size: PropTypes.oneOf(['sm', 'base', 'lg']),
   fullWidth: PropTypes.bool,
   disabled: PropTypes.bool,
