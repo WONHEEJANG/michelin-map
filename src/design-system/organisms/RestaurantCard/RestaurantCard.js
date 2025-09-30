@@ -242,24 +242,39 @@ const RestaurantCard = ({
 
     // 50개까지 시도하여 로드
     const imagesToLoad = availableImages.slice(0, 50);
-    let loadedCount = 0;
+    const loadingImages = new Set(); // 현재 로딩 중인 이미지 추적
 
     imagesToLoad.forEach((imagePath, index) => {
+      // 이미 로딩 중이거나 로드된 이미지는 스킵
+      if (loadingImages.has(imagePath)) {
+        console.log(`⏭️ 이미 로딩 중인 이미지 스킵: ${imagePath}`);
+        return;
+      }
+
+      loadingImages.add(imagePath);
       const img = new Image();
+      
       img.onload = () => {
         console.log(`✅ 이미지 로딩 성공: ${imagePath}`);
         setLoadedImages(prev => {
+          // 중복 체크를 더 엄격하게
           if (!prev.includes(imagePath)) {
             const newLoadedImages = [...prev, imagePath];
             console.log(`📸 ${restaurant.name} 로드된 이미지 업데이트:`, newLoadedImages.length, '개');
             return newLoadedImages;
+          } else {
+            console.log(`🔄 이미 로드된 이미지 스킵: ${imagePath}`);
           }
           return prev;
         });
+        loadingImages.delete(imagePath);
       };
+      
       img.onerror = () => {
         console.log(`❌ 이미지 로딩 실패: ${imagePath}`);
+        loadingImages.delete(imagePath);
       };
+      
       img.src = imagePath;
     });
   }, [restaurant]);
@@ -275,18 +290,36 @@ const RestaurantCard = ({
     // JSON 데이터에 images 배열이 있으면 사용
     if (restaurant.images && Array.isArray(restaurant.images) && restaurant.images.length > 0) {
       console.log(`📸 ${restaurant.name} JSON 이미지 사용:`, restaurant.images.length, '개');
-      return restaurant.images.map(img => `/restaurant_images/${img.filename}`);
+      
+      // 중복 제거를 위한 Set 사용
+      const uniqueImages = new Set();
+      const imagePaths = restaurant.images
+        .map(img => {
+          // 파일명에서 확장자를 .jpg로 변경 (모든 이미지가 JPG로 통일됨)
+          const filename = img.filename.replace(/\.(jpeg|png)$/i, '.jpg');
+          return `/restaurant_images/${filename}`;
+        })
+        .filter(path => {
+          // 중복 제거
+          if (uniqueImages.has(path)) {
+            console.log(`🔄 중복 이미지 제거: ${path}`);
+            return false;
+          }
+          uniqueImages.add(path);
+          return true;
+        });
+      
+      console.log(`📸 ${restaurant.name} 중복 제거 후 이미지:`, imagePaths.length, '개');
+      return imagePaths;
     }
     
-    // JSON에 images가 없으면 기존 방식으로 파일명 생성
+    // JSON에 images가 없으면 기존 방식으로 파일명 생성 (JPG만 시도)
     console.log(`🔍 ${restaurant.name} 파일명 매칭 시도`);
     const sanitizedName = restaurant.name.replace(/\s+/g, '_');
     const possibleImages = [];
     for (let i = 1; i <= 12; i++) {
       const paddedNumber = i.toString().padStart(2, '0');
       possibleImages.push(`${sanitizedName}_${paddedNumber}.jpg`);
-      possibleImages.push(`${sanitizedName}_${paddedNumber}.jpeg`);
-      possibleImages.push(`${sanitizedName}_${paddedNumber}.png`);
     }
     return possibleImages.map(filename => `/restaurant_images/${filename}`);
   };
@@ -311,11 +344,30 @@ const RestaurantCard = ({
     }
   };
 
+  // 현재 이미지 정보를 콘솔에 출력하는 함수
+  const logCurrentImageInfo = (imageIndex) => {
+    if (restaurant.images && restaurant.images[imageIndex]) {
+      const currentImage = restaurant.images[imageIndex];
+      console.log('🔄 이미지 변경 - 현재 이미지 정보:');
+      console.log('📁 파일 이름:', currentImage.filename);
+      console.log('📂 로컬 경로:', currentImage.local_path);
+      console.log('🌐 URL:', currentImage.url);
+      console.log('📍 레스토랑:', restaurant.name);
+      console.log('🔢 이미지 순서:', `${imageIndex + 1}/${restaurant.images.length}`);
+    }
+  };
+
   const handleImageClick = (index) => {
     // loadedImages에서 해당 인덱스의 이미지를 찾아서 모달에서 올바른 인덱스로 설정
     const actualIndex = loadedImages.findIndex(img => img === loadedImages[index]);
     setSelectedImageIndex(actualIndex >= 0 ? actualIndex : index);
     setIsModalOpen(true);
+    
+    // 이미지 모달이 열릴 때 현재 이미지 정보를 콘솔에 출력
+    if (actualIndex >= 0) {
+      console.log('🖼️ 이미지 모달 열림 - 현재 이미지 정보:');
+      logCurrentImageInfo(actualIndex);
+    }
   };
 
   const handleModalClose = () => {
@@ -324,15 +376,21 @@ const RestaurantCard = ({
   };
 
   const handlePreviousImage = () => {
-    setSelectedImageIndex(prev => 
-      prev > 0 ? prev - 1 : loadedImages.length - 1
-    );
+    setSelectedImageIndex(prev => {
+      const newIndex = prev > 0 ? prev - 1 : loadedImages.length - 1;
+      // 이미지 변경 시 현재 이미지 정보를 콘솔에 출력
+      logCurrentImageInfo(newIndex);
+      return newIndex;
+    });
   };
 
   const handleNextImage = () => {
-    setSelectedImageIndex(prev => 
-      prev < loadedImages.length - 1 ? prev + 1 : 0
-    );
+    setSelectedImageIndex(prev => {
+      const newIndex = prev < loadedImages.length - 1 ? prev + 1 : 0;
+      // 이미지 변경 시 현재 이미지 정보를 콘솔에 출력
+      logCurrentImageInfo(newIndex);
+      return newIndex;
+    });
   };
 
   const handleKeyDown = (e) => {
