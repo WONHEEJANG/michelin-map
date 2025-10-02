@@ -7,6 +7,14 @@ from urllib.parse import urljoin, urlparse
 import re
 import os
 from pathlib import Path
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from selenium.common.exceptions import TimeoutException, NoSuchElementException
+from webdriver_manager.chrome import ChromeDriverManager
 
 class MichelinScraper:
     def __init__(self):
@@ -18,6 +26,7 @@ class MichelinScraper:
         self.restaurants = []
         self.images_dir = Path("restaurant_images")
         self.images_dir.mkdir(exist_ok=True)
+        self.driver = None
         
     def get_restaurant_urls(self, start_url):
         """메인 페이지에서 모든 음식점 URL 수집"""
@@ -41,10 +50,20 @@ class MichelinScraper:
                 
                 soup = BeautifulSoup(response.content, 'html.parser')
                 
-                # 음식점 링크 찾기 - 더 구체적인 셀렉터 사용
-                restaurant_links = soup.select('a[href*="/restaurant/"]')
+                # 음식점 카드 찾기 - 카드 컨테이너 기준으로 중복 방지
+                # js-restaurant__list_item 클래스를 가진 카드 컨테이너에서 제목 링크 추출
+                restaurant_cards = soup.select('.js-restaurant__list_item')
                 
-                print(f"선택자 'a[href*=\"/restaurant/\"]'로 {len(restaurant_links)}개 링크 발견")
+                print(f"선택자 '.js-restaurant__list_item'로 {len(restaurant_cards)}개 카드 발견")
+                
+                restaurant_links = []
+                for card in restaurant_cards:
+                    # 각 카드에서 제목 링크만 추출
+                    title_link = card.select_one('.card__menu-content--title a[href*="/restaurant/"]')
+                    if title_link:
+                        restaurant_links.append(title_link)
+                
+                print(f"카드에서 추출한 제목 링크: {len(restaurant_links)}개")
                 
                 if not restaurant_links:
                     consecutive_empty_pages += 1
@@ -60,6 +79,8 @@ class MichelinScraper:
                     href = link.get('href')
                     if href and '/restaurant/' in href:
                         full_url = urljoin(self.base_url, href)
+                        
+                        # 전체 목록에서 이미 처리된 URL인지 확인 (제목 링크만 추출하므로 페이지 내 중복 없음)
                         if full_url not in restaurant_urls:
                             restaurant_urls.add(full_url)
                             page_urls.append(full_url)
@@ -101,21 +122,146 @@ class MichelinScraper:
         print(f"총 {len(restaurant_urls_list)}개 음식점 URL 수집 완료")
         return restaurant_urls_list
     
-    def extract_image_urls(self, soup):
-        """음식점 페이지에서 이미지 URL들 추출"""
-        image_urls = []
+    def setup_selenium_driver(self):
+        """Selenium 드라이버 설정"""
+        if self.driver is None:
+            chrome_options = Options()
+            chrome_options.add_argument('--headless')  # 브라우저 창을 띄우지 않음
+            chrome_options.add_argument('--no-sandbox')
+            chrome_options.add_argument('--disable-dev-shm-usage')
+            chrome_options.add_argument('--disable-gpu')
+            chrome_options.add_argument('--window-size=1920,1080')
+            chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
+            
+            try:
+                # webdriver-manager를 사용해서 자동으로 드라이버 다운로드 및 설정
+                service = Service(ChromeDriverManager().install())
+                self.driver = webdriver.Chrome(service=service, options=chrome_options)
+                print("✅ Selenium 드라이버 초기화 완료")
+            except Exception as e:
+                print(f"❌ Selenium 드라이버 초기화 실패: {e}")
+                print("💡 Chrome 브라우저가 설치되어 있는지 확인하세요")
+                return False
+        return True
+    
+    def close_selenium_driver(self):
+        """Selenium 드라이버 종료"""
+        if self.driver:
+            self.driver.quit()
+            self.driver = None
+            print("✅ Selenium 드라이버 종료 완료")
+    
+    def scrape_images_with_selenium(self, url, restaurant_name):
+        """Selenium을 사용해서 모달을 열고 모든 이미지 수집"""
+        if not self.setup_selenium_driver():
+            return []
         
-        # 음식점 이미지 선택자 (우선순위 순)
+        try:
+            print(f"    🌐 Selenium으로 {restaurant_name} 페이지 로드 중...")
+            self.driver.get(url)
+            
+            # 페이지 로드 대기
+            WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.TAG_NAME, "body"))
+            )
+            
+            # 이미지 갤러리 버튼 찾기 및 클릭
+            gallery_selectors = [
+                "button.masthead__gallery-open.js-gallery-button",  # 우래옥에서 발견된 갤러리 버튼
+                "button[data-target='#js-gallery-masthead']",  # data-target으로 찾기
+                "button[data-target='#js-modal-gallery']",
+                ".js-modal-gallery-trigger",
+                "button[aria-label*='gallery']",
+                "button[aria-label*='Gallery']",
+                ".gallery-trigger",
+                ".image-gallery-trigger"
+            ]
+            
+            gallery_button = None
+            for selector in gallery_selectors:
+                try:
+                    gallery_button = WebDriverWait(self.driver, 5).until(
+                        EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
+                    )
+                    print(f"    ✅ 갤러리 버튼 발견: {selector}")
+                    break
+                except TimeoutException:
+                    continue
+            
+            if gallery_button:
+                # 갤러리 버튼 클릭
+                self.driver.execute_script("arguments[0].click();", gallery_button)
+                print(f"    🖼️ 갤러리 모달 열기 시도...")
+                
+                # 모달이 열릴 때까지 대기
+                try:
+                    WebDriverWait(self.driver, 10).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, ".modal__gallery-image"))
+                    )
+                    print(f"    ✅ 갤러리 모달 열림 확인")
+                    
+                    # 모든 이미지가 로드될 때까지 잠시 대기
+                    time.sleep(3)
+                    
+                except TimeoutException:
+                    print(f"    ⚠️ 갤러리 모달 열기 실패, 기본 이미지만 수집")
+            else:
+                print(f"    ⚠️ 갤러리 버튼을 찾을 수 없음, 기본 이미지만 수집")
+            
+            # 현재 페이지의 모든 이미지 URL 추출
+            image_urls = []
+            processed_urls = set()
+            
+            # ci-src 속성이 있는 모든 이미지 찾기
+            ci_images = self.driver.find_elements(By.CSS_SELECTOR, "img[ci-src]")
+            print(f"    📸 ci-src 속성이 있는 이미지: {len(ci_images)}개")
+            
+            for img in ci_images:
+                try:
+                    url = img.get_attribute('ci-src')
+                    if url and url.strip():
+                        # 상대 URL을 절대 URL로 변환
+                        if url.startswith('/'):
+                            url = f"https://guide.michelin.com{url}"
+                        
+                        # 크기 조정 파라미터 제거
+                        if '?' in url:
+                            original_url = url.split('?')[0]
+                        else:
+                            original_url = url
+                        
+                        if original_url not in processed_urls:
+                            # 간단한 필터링 (cloudimg.io 도메인만)
+                            if 'cloudimg.io' in original_url:
+                                image_urls.append(original_url)
+                                processed_urls.add(original_url)
+                                print(f"      ✓ 이미지 발견: {original_url[:60]}...")
+                except Exception as e:
+                    continue
+            
+            print(f"    📸 총 {len(image_urls)}개 고유 이미지 URL 추출 (Selenium)")
+            return image_urls
+            
+        except Exception as e:
+            print(f"    ❌ Selenium 이미지 수집 실패: {e}")
+            return []
+    
+    def extract_image_urls(self, soup, restaurant_name):
+        """음식점 페이지에서 이미지 URL들 추출 (개선된 버전)"""
+        image_urls = []
+        processed_urls = set()  # 중복 방지를 위한 set
+        
+        print(f"    🔍 {restaurant_name} 이미지 추출 시작...")
+        
+        # 음식점별 고유 이미지 선택자 (우선순위 순)
         selectors = [
-            '.masthead__gallery img',  # 메인 갤러리 이미지 (가장 중요)
+            '.modal__gallery-image img',  # 모달 갤러리 이미지 (가장 중요 - 모든 갤러리 이미지)
+            '.owl-item img',  # 캐러셀 아이템 내 이미지
+            '.masthead__gallery img',  # 메인 갤러리 이미지
             '.masthead img',  # 마스트헤드 내 이미지
-            'img[ci-src]',   # ci-src 속성이 있는 이미지
-            'img[data-src]', # data-src 속성이 있는 이미지
-            'img[src*="cloudimg.io"]',  # cloudimg.io 도메인의 이미지
             '.gallery img',   # 갤러리 내 이미지
             '.image-gallery img',  # 이미지 갤러리
             '.restaurant-image img',  # 레스토랑 이미지
-            'img[alt*="restaurant"]',  # 레스토랑 관련 alt 텍스트
         ]
         
         for selector in selectors:
@@ -133,68 +279,131 @@ class MichelinScraper:
                         if url.startswith('/'):
                             url = f"https://guide.michelin.com{url}"
                         
+                        # 크기 조정 파라미터 제거하여 원본 URL 얻기
+                        if '?' in url:
+                            original_url = url.split('?')[0]
+                        else:
+                            original_url = url
+                        
+                        # 이미 처리된 URL인지 확인
+                        if original_url in processed_urls:
+                            continue
+                        
                         # 음식점 이미지 필터링 (아이콘, 로고 제외)
-                        if self.is_restaurant_image(url, img):
-                            # 크기 조정 파라미터 제거
-                            if '?' in url:
-                                original_url = url.split('?')[0]
-                            else:
-                                original_url = url
-                            
-                            if original_url not in image_urls:
-                                image_urls.append(original_url)
-                                print(f"    ✓ 음식점 이미지 발견: {original_url[:50]}...")
+                        if self.is_restaurant_image(original_url, img, restaurant_name):
+                            image_urls.append(original_url)
+                            processed_urls.add(original_url)
+                            print(f"      ✓ 고유 이미지 발견: {original_url[:60]}...")
+                        else:
+                            print(f"      ❌ 필터링됨: {original_url[:60]}...")
         
-        # 중복 제거
-        image_urls = list(set(image_urls))
+        # 추가: 모든 img 태그에서 ci-src 속성만 따로 찾기 (JavaScript로 동적 로드된 이미지들)
+        print(f"    🔍 추가 검색: 모든 img 태그에서 ci-src 속성 찾기...")
+        all_ci_images = soup.find_all('img', {'ci-src': True})
+        print(f"    ci-src 속성이 있는 이미지: {len(all_ci_images)}개")
+        
+        for img in all_ci_images:
+            url = img.get('ci-src')
+            if url and url.strip():
+                # 상대 URL을 절대 URL로 변환
+                if url.startswith('/'):
+                    url = f"https://guide.michelin.com{url}"
+                
+                # 크기 조정 파라미터 제거하여 원본 URL 얻기
+                if '?' in url:
+                    original_url = url.split('?')[0]
+                else:
+                    original_url = url
+                
+                # 이미 처리된 URL인지 확인
+                if original_url in processed_urls:
+                    continue
+                
+                # 음식점 이미지 필터링
+                if self.is_restaurant_image(original_url, img, restaurant_name):
+                    image_urls.append(original_url)
+                    processed_urls.add(original_url)
+                    print(f"      ✓ ci-src 이미지 발견: {original_url[:60]}...")
+                else:
+                    print(f"      ❌ ci-src 이미지 필터링됨: {original_url[:60]}...")
+        
         print(f"    📸 총 {len(image_urls)}개 고유 이미지 URL 추출")
         return image_urls
     
-    def is_restaurant_image(self, url, img_element):
-        """음식점 이미지인지 판단하는 함수"""
-        # 제외할 이미지 패턴들
+    def is_restaurant_image(self, url, img_element, restaurant_name):
+        """음식점 이미지인지 판단하는 함수 (개선된 버전)"""
+        
+        # 1. 갤러리 이미지인 경우 최우선으로 통과
+        # 'modal__gallery-image' 클래스를 가진 부모 div 안에 있는 이미지는 갤러리 이미지로 간주
+        parent_div = img_element.find_parent('div', class_='modal__gallery-image')
+        if parent_div:
+            print(f"      ✅ 갤러리 이미지로 확인되어 통과: {url[:60]}...")
+            return True
+        
+        # 2. owl-item 내부의 이미지도 갤러리 이미지로 간주
+        owl_item = img_element.find_parent('div', class_='owl-item')
+        if owl_item:
+            print(f"      ✅ 캐러셀 이미지로 확인되어 통과: {url[:60]}...")
+            return True
+        
+        # 3. 제외할 이미지 패턴들 (갤러리 이미지가 아닌 경우에만 적용)
         exclude_patterns = [
-            'michelin-award',  # 미쉐린 어워드 아이콘
-            'icons/',  # 아이콘들
-            'social-',  # 소셜 미디어 아이콘
-            'footer',  # 푸터 이미지
-            'logo',  # 로고
-            'bib-michelin-man',  # 미쉐린맨
-            '1star', '2star', '3star',  # 별점 아이콘
-            'hot', 'close', 'jcb', 'maestro', 'visa', 'amex', 'union'  # 결제 아이콘들
+            'michelin-award', 'icons/', 'social-', 'footer', 'logo',
+            'bib-michelin-man', '1star', '2star', '3star',
+            'hot', 'close', 'jcb', 'maestro', 'visa', 'amex', 'union',
+            'default', 'placeholder', 'sample'
         ]
         
         # URL에서 제외 패턴 확인
         for pattern in exclude_patterns:
             if pattern in url.lower():
+                print(f"      ❌ URL 패턴 제외: {pattern}")
                 return False
         
         # 클래스에서 제외 패턴 확인
         classes = img_element.get('class', [])
         for cls in classes:
             if any(pattern in cls.lower() for pattern in exclude_patterns):
+                print(f"      ❌ 클래스 패턴 제외: {cls}")
                 return False
         
         # alt 텍스트에서 제외 패턴 확인
         alt_text = img_element.get('alt', '').lower()
         if any(pattern in alt_text for pattern in exclude_patterns):
+            print(f"      ❌ alt 텍스트 제외: {alt_text}")
             return False
         
-        # cloudimg.io 도메인의 이미지는 음식점 이미지일 가능성이 높음
+        # 4. 공통 이미지 URL 패턴들 (여러 음식점에서 반복 사용되는 이미지)
+        common_image_patterns = [
+            '0b9dfd084d714be0ad8666feb11efbb3',  # 비빔냉면 이미지
+            'a15ac7eea1c6420f9025ce233045161e',  # 또 다른 공통 이미지
+            'cab8a8283cd146cda6ca584be6e992c6',  # 또 다른 공통 이미지
+        ]
+        
+        # 공통 이미지 패턴 확인
+        for pattern in common_image_patterns:
+            if pattern in url:
+                print(f"      ❌ 공통 이미지 제외: {pattern}")
+                return False
+        
+        # 5. cloudimg.io 도메인의 이미지는 음식점 이미지일 가능성이 높음
         if 'cloudimg.io' in url:
+            print(f"      ✅ cloudimg.io 이미지로 통과: {url[:60]}...")
             return True
         
-        # 크기가 작은 이미지들 제외 (아이콘일 가능성)
+        # 6. 크기가 작은 이미지들 제외 (아이콘일 가능성)
         width = img_element.get('width')
         height = img_element.get('height')
         if width and height:
             try:
                 w, h = int(width), int(height)
                 if w < 100 or h < 100:  # 100px 미만은 아이콘으로 간주
+                    print(f"      ❌ 크기 너무 작음 ({w}x{h}): {url[:60]}...")
                     return False
             except ValueError:
                 pass
         
+        print(f"      ✅ 모든 필터 통과: {url[:60]}...")
         return True
     
     def download_image(self, image_url, restaurant_name, image_index):
@@ -262,25 +471,36 @@ class MichelinScraper:
                 print(f"    - {selector}: {len(elements)}개 발견")
     
     def scrape_restaurant_images(self, url, restaurant_name):
-        """음식점 이미지들 스크래핑 및 다운로드"""
+        """음식점 이미지들 스크래핑 및 다운로드 (Selenium 사용)"""
         try:
-            response = self.session.get(url)
-            response.raise_for_status()
+            print(f"  🖼️ {restaurant_name} 이미지 수집 중...")
             
-            soup = BeautifulSoup(response.content, 'html.parser')
+            # 먼저 Selenium으로 모달을 열고 모든 이미지 수집 시도
+            selenium_image_urls = self.scrape_images_with_selenium(url, restaurant_name)
             
-            # 디버깅 정보 출력 (처음 몇 개만)
-            if len(self.restaurants) < 3:
-                self.debug_html_structure(soup, restaurant_name)
-            
-            # 이미지 URL들 추출
-            image_urls = self.extract_image_urls(soup)
-            
-            if not image_urls:
-                print(f"  ⚠️ {restaurant_name}: 이미지를 찾을 수 없습니다.")
-                return []
-            
-            print(f"  📸 {restaurant_name}: {len(image_urls)}개 이미지 발견")
+            if selenium_image_urls:
+                print(f"  📸 {restaurant_name}: Selenium으로 {len(selenium_image_urls)}개 이미지 발견")
+                image_urls = selenium_image_urls
+            else:
+                # Selenium 실패 시 기존 방식으로 폴백
+                print(f"  🔄 Selenium 실패, 기존 방식으로 폴백...")
+                response = self.session.get(url)
+                response.raise_for_status()
+                
+                soup = BeautifulSoup(response.content, 'html.parser')
+                
+                # 디버깅 정보 출력 (처음 몇 개만)
+                if len(self.restaurants) < 3:
+                    self.debug_html_structure(soup, restaurant_name)
+                
+                # 이미지 URL들 추출
+                image_urls = self.extract_image_urls(soup, restaurant_name)
+                
+                if not image_urls:
+                    print(f"  ⚠️ {restaurant_name}: 이미지를 찾을 수 없습니다.")
+                    return []
+                
+                print(f"  📸 {restaurant_name}: 기존 방식으로 {len(image_urls)}개 이미지 발견")
             
             # 이미지들 다운로드
             downloaded_images = []
@@ -302,7 +522,7 @@ class MichelinScraper:
     def scrape_restaurant_detail(self, url):
         """개별 음식점 상세 정보 스크래핑"""
         try:
-            response = self.session.get(url)
+            response = self.session.get(url)  
             response.raise_for_status()
             
             soup = BeautifulSoup(response.content, 'html.parser')

@@ -35,11 +35,7 @@ function App() {
     );
   }
 
-  return (
-    <div className="App">
-      <MichelinMapPage restaurants={restaurants} />
-    </div>
-  );
+  return <MichelinMapPage restaurants={restaurants} />;
 }
 
 export default App;
