@@ -7,7 +7,7 @@ import { colors, spacing, borderRadius, shadows } from '../../tokens';
 
 const MapContainer = styled.div`
   position: relative;
-  height: calc(100vh - 80px);
+  height: calc(100vh);
   min-height: 400px;
   width: 100%;
 `;
@@ -113,11 +113,13 @@ const Map = ({
   onRestaurantsWithCoords,
   onMarkersLoaded,
   onRestaurantsInCurrentBounds,
+  onFilterMarkers,
   className 
 }) => {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const markersRef = useRef([]);
+  const allMarkersRef = useRef([]); // 모든 마커를 저장 (필터링용)
   const [currentLocation, setCurrentLocation] = useState(null);
   const [locationError, setLocationError] = useState(null);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
@@ -358,24 +360,24 @@ const Map = ({
     return restaurantsInBounds;
   }, []);
 
-  // 마커들을 지도에 추가
-  const addMarkersToMap = useCallback(async () => {
+  // 모든 마커를 초기화 (한 번만 실행)
+  const initializeAllMarkers = useCallback(async () => {
     if (!mapInstance.current || !checkKakaoAPI()) {
       console.log('지도 초기화 또는 API 확인 실패');
       return;
     }
 
-    console.log('마커 추가 시작, 레스토랑 수:', restaurants.length);
+    console.log('모든 마커 초기화 시작, 레스토랑 수:', restaurants.length);
     setIsLoadingMarkers(true);
     setMarkersLoaded(false);
 
     // 기존 마커들 제거 (현재 위치 마커 제외)
-    markersRef.current.forEach(marker => {
+    allMarkersRef.current.forEach(marker => {
       if (!marker.isCurrentLocation) {
         marker.setMap(null);
       }
     });
-    markersRef.current = markersRef.current.filter(marker => marker.isCurrentLocation);
+    allMarkersRef.current = allMarkersRef.current.filter(marker => marker.isCurrentLocation);
 
     // 레스토랑 마커들 추가
     let addedCount = 0;
@@ -415,7 +417,7 @@ const Map = ({
           });
 
           marker.setMap(mapInstance.current);
-          markersRef.current.push(marker);
+          allMarkersRef.current.push(marker);
           addedCount++;
           
           // 좌표가 변환된 음식점을 배열에 추가 (images 필드 포함)
@@ -434,7 +436,7 @@ const Map = ({
       }
     }
     
-    console.log(`총 ${addedCount}개 마커 추가됨`);
+    console.log(`총 ${addedCount}개 마커 초기화됨`);
     setIsLoadingMarkers(false);
     setMarkersLoaded(true);
     
@@ -450,13 +452,48 @@ const Map = ({
     }
   }, [restaurants, onRestaurantSelect, getMarkerImage, checkKakaoAPI, onRestaurantsWithCoords, onMarkersLoaded]);
 
-  // 지도 초기화 및 마커 추가
+  // 필터링된 마커들만 표시/숨김
+  const filterMarkers = useCallback((filteredRestaurants) => {
+    if (!mapInstance.current || !checkKakaoAPI()) {
+      console.log('지도 초기화 또는 API 확인 실패');
+      return;
+    }
+
+    console.log('마커 필터링 시작, 필터링된 레스토랑 수:', filteredRestaurants.length);
+    
+    // 모든 마커를 숨김
+    allMarkersRef.current.forEach(marker => {
+      if (!marker.isCurrentLocation) {
+        marker.setMap(null);
+      }
+    });
+
+    // 필터링된 마커들만 표시
+    const visibleMarkers = [];
+    allMarkersRef.current.forEach(marker => {
+      if (marker.isCurrentLocation) {
+        visibleMarkers.push(marker);
+        return;
+      }
+
+      const restaurantData = marker.restaurantData;
+      if (restaurantData && filteredRestaurants.some(r => r.name === restaurantData.name)) {
+        marker.setMap(mapInstance.current);
+        visibleMarkers.push(marker);
+      }
+    });
+
+    markersRef.current = visibleMarkers;
+    console.log(`필터링 완료: ${visibleMarkers.length}개 마커 표시`);
+  }, [checkKakaoAPI]);
+
+  // 지도 초기화 및 마커 초기화 (한 번만 실행)
   useEffect(() => {
     const initMapWithRetry = () => {
       if (checkKakaoAPI()) {
         initMap();
         setTimeout(() => {
-          addMarkersToMap();
+          initializeAllMarkers();
         }, 100);
       } else {
         setTimeout(initMapWithRetry, 100);
@@ -484,14 +521,21 @@ const Map = ({
       clearTimeout(timer);
       resizeObserver.disconnect();
     };
-  }, [initMap, addMarkersToMap, checkKakaoAPI]);
+  }, [initMap, initializeAllMarkers, checkKakaoAPI]);
 
-  // 레스토랑 데이터가 변경될 때 마커 업데이트
+  // 필터링된 레스토랑이 변경될 때 마커 필터링
   useEffect(() => {
-    if (mapInstance.current) {
-      addMarkersToMap();
+    if (mapInstance.current && markersLoaded) {
+      filterMarkers(restaurants);
     }
-  }, [addMarkersToMap, restaurants]);
+  }, [filterMarkers, restaurants, markersLoaded]);
+
+  // 외부에서 필터링 함수 호출할 수 있도록 부모에게 전달
+  useEffect(() => {
+    if (onFilterMarkers) {
+      onFilterMarkers(filterMarkers);
+    }
+  }, [onFilterMarkers, filterMarkers]);
 
   // 현재 위치가 변경될 때 마커 추가
   useEffect(() => {
@@ -568,6 +612,8 @@ Map.propTypes = {
   onMapReady: PropTypes.func,
   onRestaurantsWithCoords: PropTypes.func,
   onMarkersLoaded: PropTypes.func,
+  onRestaurantsInCurrentBounds: PropTypes.func,
+  onFilterMarkers: PropTypes.func,
   className: PropTypes.string,
 };
 

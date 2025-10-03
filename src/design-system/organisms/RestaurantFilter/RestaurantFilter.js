@@ -95,7 +95,7 @@ const RestaurantFilter = ({
   restaurants = [], 
   onFilterChange,
   onClose,
-  isCollapsed = false,
+  isCollapsed = true,
   onToggleCollapse
 }) => {
   const [selectedRating, setSelectedRating] = useState('all');

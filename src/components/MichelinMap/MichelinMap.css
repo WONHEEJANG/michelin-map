@@ -115,7 +115,7 @@
 
 .map-container {
   position: relative;
-  height: calc(100vh - 80px); /* 헤더 높이를 제외한 전체 높이 */
+  height: calc(100vh); /* 헤더 높이를 제외한 전체 높이 */
   min-height: 400px; /* 최소 높이 보장 */
   width: 100%;
 }

@@ -94,12 +94,13 @@ const MichelinMapPage = ({
   const [filteredRestaurants, setFilteredRestaurants] = useState(restaurants);
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const [currentLocation, setCurrentLocation] = useState(null);
-  const [isFilterCollapsed, setIsFilterCollapsed] = useState(false);
+  const [isFilterCollapsed, setIsFilterCollapsed] = useState(true);
   const [isNearbyVisible, setIsNearbyVisible] = useState(false);
   const [nearbyRestaurants, setNearbyRestaurants] = useState([]);
   const mapInstanceRef = useRef(null);
   const [restaurantsWithCoords, setRestaurantsWithCoords] = useState([]);
   const [markersLoaded, setMarkersLoaded] = useState(false);
+  const [filterMarkersFunction, setFilterMarkersFunction] = useState(null);
 
   // 초기 데이터 로드
   useEffect(() => {
@@ -112,7 +113,13 @@ const MichelinMapPage = ({
   const handleFilterChange = useCallback((filtered) => {
     setFilteredRestaurants(filtered);
     setSelectedRestaurant(null); // 필터 변경 시 선택된 레스토랑 초기화
-  }, []);
+    
+    // 마커 필터링 함수가 있으면 호출
+    if (filterMarkersFunction) {
+      console.log('마커 필터링 실행:', filtered.length, '개');
+      filterMarkersFunction(filtered);
+    }
+  }, [filterMarkersFunction]);
 
   // 레스토랑 선택 핸들러
   const handleRestaurantSelect = useCallback((restaurant) => {
@@ -270,6 +277,12 @@ const MichelinMapPage = ({
     console.log(`마커 로딩 상태: ${loaded ? '완료' : '진행중'}`);
   }, []);
 
+  // 필터링 함수 받기 핸들러
+  const handleFilterMarkers = useCallback((filterFn) => {
+    setFilterMarkersFunction(() => filterFn);
+    console.log('필터링 함수를 받았습니다.');
+  }, []);
+
   // isNearbyVisible 상태 변화 추적
   useEffect(() => {
     console.log('isNearbyVisible 상태 변화:', isNearbyVisible);
@@ -281,7 +294,7 @@ const MichelinMapPage = ({
     <PageContainer>
       <MapSection>
         <Map
-          restaurants={filteredRestaurants}
+          restaurants={restaurants}
           onRestaurantSelect={handleRestaurantSelect}
           onLocationUpdate={handleLocationUpdate}
           onFilterToggle={handleFilterToggle}
@@ -292,6 +305,7 @@ const MichelinMapPage = ({
           onMapReady={handleMapReady}
           onRestaurantsWithCoords={handleRestaurantsWithCoords}
           onMarkersLoaded={handleMarkersLoaded}
+          onFilterMarkers={handleFilterMarkers}
         />
         
         <RestaurantFilter
