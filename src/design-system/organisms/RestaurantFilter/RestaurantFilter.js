@@ -10,23 +10,27 @@ const FilterContainer = styled.div.withConfig({
 })`
   position: absolute;
   top: ${spacing[5]};
-  left: ${spacing[5]};
-  right: ${spacing[5]};
+  left: 50%;
+  transform: ${({ isCollapsed }) => 
+    isCollapsed 
+      ? 'translateX(-50%) translateY(-100%)' 
+      : 'translateX(-50%) translateY(0)'
+  };
+  width: 90%;
+  max-width: 600px;
   z-index: 1000;
   background: ${colors.liquid.glass};
   border-radius: ${borderRadius.xl};
-  padding: ${spacing[6]};
+  padding: ${spacing[4]};
   box-shadow: ${shadows.glass};
   border: 1px solid ${colors.border.glass};
-  max-height: 80vh;
+  max-height: 50vh;
   overflow-y: auto;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  transform: ${({ isCollapsed }) => isCollapsed ? 'translateY(-100%)' : 'translateY(0)'};
   opacity: ${({ isCollapsed }) => isCollapsed ? '0' : '1'};
   pointer-events: ${({ isCollapsed }) => isCollapsed ? 'none' : 'auto'};
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  position: relative;
   
   &::before {
     content: '';
@@ -46,14 +50,16 @@ const FilterHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: ${spacing[6]};
-  padding-bottom: ${spacing[4]};
+  margin-bottom: ${spacing[3]};
+  padding-bottom: ${spacing[2]};
   border-bottom: 1px solid ${colors.border.primary};
+  flex-wrap: wrap;
+  gap: ${spacing[2]};
 `;
 
 const FilterTitle = styled.h3`
   margin: 0;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   color: ${colors.text.primary};
 `;
@@ -61,9 +67,14 @@ const FilterTitle = styled.h3`
 const FilterGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr;
-  gap: ${spacing[4]};
+  gap: ${spacing[2]};
   
-  @media (min-width: 768px) {
+  @media (min-width: 640px) {
+    grid-template-columns: 1fr 1fr;
+    gap: ${spacing[3]};
+  }
+  
+  @media (min-width: 1024px) {
     grid-template-columns: 1fr 1fr 1fr;
   }
 `;
@@ -71,7 +82,7 @@ const FilterGrid = styled.div`
 const FilterSection = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${spacing[2]};
+  gap: ${spacing[1]};
 `;
 
 const FilterLabel = styled.label`
@@ -84,7 +95,7 @@ const RestaurantFilter = ({
   restaurants = [], 
   onFilterChange,
   onClose,
-  isCollapsed = true,
+  isCollapsed = false,
   onToggleCollapse
 }) => {
   const [selectedRating, setSelectedRating] = useState('all');
@@ -140,7 +151,12 @@ const RestaurantFilter = ({
     <FilterContainer isCollapsed={isCollapsed}>
       <FilterHeader>
         <FilterTitle>🔍 필터</FilterTitle>
-        <div style={{ display: 'flex', gap: spacing[2] }}>
+        <div style={{ 
+          display: 'flex', 
+          gap: spacing[2], 
+          flexWrap: 'wrap',
+          alignItems: 'center'
+        }}>
           <Button 
             variant="ghost" 
             size="sm" 
