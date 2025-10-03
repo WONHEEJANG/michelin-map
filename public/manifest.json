@@ -1,6 +1,6 @@
 {
-  "short_name": "카카오 지도 샘플",
-  "name": "카카오 지도 샘플 애플리케이션",
+  "short_name": "Michelin Map",
+  "name": "Michelin Restaurant Map",
   "icons": [
     {
       "src": "favicon.ico",
