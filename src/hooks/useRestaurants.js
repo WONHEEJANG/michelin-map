@@ -13,7 +13,7 @@ export const useRestaurants = () => {
       
       console.log('🍽️ 미슐랭 레스토랑 데이터 로딩 시작...');
       
-      const response = await fetch('/michelin_restaurants.json');
+      const response = await fetch('./michelin_restaurants.json');
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: 데이터를 불러오는데 실패했습니다.`);
       }

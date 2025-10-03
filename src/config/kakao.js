@@ -1,6 +1,13 @@
 // 카카오맵 API 설정
 export const KAKAO_MAP_API_KEY = process.env.REACT_APP_KAKAO_MAP_API_KEY;
 
+// 디버깅용 로그
+console.log('🔑 카카오맵 API 키 확인:', {
+  hasKey: !!KAKAO_MAP_API_KEY,
+  keyLength: KAKAO_MAP_API_KEY?.length,
+  keyPrefix: KAKAO_MAP_API_KEY?.substring(0, 8) + '...'
+});
+
 // 카카오맵 API 로드 함수
 export const loadKakaoMapAPI = () => {
   return new Promise((resolve, reject) => {
@@ -37,6 +44,8 @@ export const loadKakaoMapAPI = () => {
     
     script.onerror = function(error) {
       console.error('카카오맵 API 로드 실패:', error);
+      console.error('API 키:', KAKAO_MAP_API_KEY);
+      console.error('스크립트 URL:', script.src);
       reject(error);
     };
     
