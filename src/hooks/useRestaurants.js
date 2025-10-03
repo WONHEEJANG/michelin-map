@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import restaurantsData from '../data/michelin_restaurants.json';
 
 // 미슐랭 레스토랑 데이터를 가져오는 훅
 export const useRestaurants = () => {
@@ -13,12 +14,8 @@ export const useRestaurants = () => {
       
       console.log('🍽️ 미슐랭 레스토랑 데이터 로딩 시작...');
       
-      const response = await fetch('./michelin_restaurants.json');
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: 데이터를 불러오는데 실패했습니다.`);
-      }
-      
-      const data = await response.json();
+      // JSON 파일을 직접 import로 로드
+      const data = restaurantsData;
       
       // 데이터 유효성 검사
       if (!Array.isArray(data)) {

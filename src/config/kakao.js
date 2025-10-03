@@ -1,5 +1,5 @@
 // 카카오맵 API 설정
-export const KAKAO_MAP_API_KEY = process.env.REACT_APP_KAKAO_MAP_API_KEY;
+export const KAKAO_MAP_API_KEY = process.env.KAKAO_MAP_API_KEY;
 
 // 디버깅용 로그
 console.log('🔑 카카오맵 API 키 확인:', {
@@ -19,7 +19,7 @@ export const loadKakaoMapAPI = () => {
 
     // API 키 유효성 검사
     if (!KAKAO_MAP_API_KEY) {
-      console.error('카카오맵 API 키가 설정되지 않았습니다. 환경 변수 REACT_APP_KAKAO_MAP_API_KEY를 확인해주세요.');
+      console.error('카카오맵 API 키가 설정되지 않았습니다. 환경 변수 KAKAO_MAP_API_KEY를 확인해주세요.');
       reject(new Error('API key not configured'));
       return;
     }
