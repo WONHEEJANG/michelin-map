@@ -26,47 +26,50 @@ const normalizeAddress = (address) => {
   return normalizedAddress;
 };
 
-// 카카오맵 Geocoder를 사용한 정확한 주소-좌표 변환
-export const geocodeAddress = (address) => {
-  return new Promise((resolve) => {
-    if (!address || !window.kakao || !window.kakao.maps || !window.kakao.maps.services) {
-      resolve(null);
-      return;
+// Vercel Serverless Function을 통한 주소-좌표 변환
+export const geocodeAddress = async (address) => {
+  try {
+    if (!address) {
+      return null;
     }
 
     // 주소 정규화
     const normalizedAddress = normalizeAddress(address);
 
-    // 주소-좌표 변환 객체를 생성합니다
-    const geocoder = new window.kakao.maps.services.Geocoder();
+    // Vercel API Route 호출
+    const response = await fetch(`/api/geocode?query=${encodeURIComponent(normalizedAddress)}`);
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
 
-    // 주소로 좌표를 검색합니다
-    geocoder.addressSearch(normalizedAddress, (result, status) => {
-      // 정상적으로 검색이 완료됐으면
-      if (status === window.kakao.maps.services.Status.OK) {
-        // 여러 결과 중 가장 정확한 결과 선택
-        let bestResult = result[0];
-        
-        // 도로명 주소가 있는 경우 우선 선택
-        for (const item of result) {
-          if (item.road_address && item.road_address.building_name) {
-            bestResult = item;
-            break;
-          }
+    const data = await response.json();
+    
+    if (data.documents && data.documents.length > 0) {
+      // 여러 결과 중 가장 정확한 결과 선택
+      let bestResult = data.documents[0];
+      
+      // 도로명 주소가 있는 경우 우선 선택
+      for (const item of data.documents) {
+        if (item.road_address && item.road_address.building_name) {
+          bestResult = item;
+          break;
         }
-        
-        const coords = {
-          lat: parseFloat(bestResult.y),
-          lng: parseFloat(bestResult.x)
-        };
-        
-        resolve(coords);
-      } else {
-        // 실패 시 서울 중심 좌표 반환
-        resolve({ lat: 37.5665, lng: 126.9780 });
       }
-    });
-  });
+      
+      return {
+        lat: parseFloat(bestResult.y),
+        lng: parseFloat(bestResult.x)
+      };
+    } else {
+      // 실패 시 서울 중심 좌표 반환
+      return { lat: 37.5665, lng: 126.9780 };
+    }
+  } catch (error) {
+    console.error('Geocoding error:', error);
+    // 실패 시 서울 중심 좌표 반환
+    return { lat: 37.5665, lng: 126.9780 };
+  }
 };
 
 // 카카오맵 LatLng 객체 생성
