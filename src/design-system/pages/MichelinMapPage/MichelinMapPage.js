@@ -224,7 +224,21 @@ const MichelinMapPage = ({
   const handleRestaurantsInCurrentBounds = useCallback((restaurantsInBounds) => {
     console.log('현재 지도 영역 내 음식점들:', restaurantsInBounds);
     console.log(`현재 지도에 표시된 음식점: ${restaurantsInBounds.length}개`);
-  }, []);
+    
+    // 현재 위치가 있으면 거리순으로 정렬
+    if (currentLocation) {
+      const sorted = sortRestaurantsByDistance(restaurantsInBounds, currentLocation);
+      setNearbyRestaurants(sorted);
+      console.log('거리순 정렬된 음식점들:', sorted);
+    } else {
+      setNearbyRestaurants(restaurantsInBounds);
+      console.log('정렬되지 않은 음식점들:', restaurantsInBounds);
+    }
+    
+    // 내 주변 미쉐린 패널을 표시
+    console.log('isNearbyVisible을 true로 설정합니다');
+    setIsNearbyVisible(true);
+  }, [currentLocation]);
 
   // 내 주변 음식점에서 레스토랑 선택 핸들러
   const handleNearbyRestaurantSelect = useCallback((restaurant) => {
@@ -254,6 +268,12 @@ const MichelinMapPage = ({
     setMarkersLoaded(loaded);
     console.log(`마커 로딩 상태: ${loaded ? '완료' : '진행중'}`);
   }, []);
+
+  // isNearbyVisible 상태 변화 추적
+  useEffect(() => {
+    console.log('isNearbyVisible 상태 변화:', isNearbyVisible);
+    console.log('nearbyRestaurants 상태:', nearbyRestaurants);
+  }, [isNearbyVisible, nearbyRestaurants]);
 
 
   return (
@@ -293,7 +313,10 @@ const MichelinMapPage = ({
         <NearbyRestaurants
           restaurants={nearbyRestaurants}
           isVisible={isNearbyVisible}
-          onClose={() => setIsNearbyVisible(false)}
+          onClose={() => {
+            console.log('NearbyRestaurants 닫기 버튼 클릭');
+            setIsNearbyVisible(false);
+          }}
           onRestaurantSelect={handleNearbyRestaurantSelect}
         />
       </MapSection>

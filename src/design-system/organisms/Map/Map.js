@@ -335,6 +335,9 @@ const Map = ({
     const restaurantsInBounds = [];
     
     markersRef.current.forEach(marker => {
+      // 현재 위치 마커는 제외
+      if (marker.isCurrentLocation) return;
+      
       const position = marker.getPosition();
       const lat = position.getLat();
       const lng = position.getLng();
@@ -343,14 +346,10 @@ const Map = ({
       if (lat >= swLatLng.getLat() && lat <= neLatLng.getLat() &&
           lng >= swLatLng.getLng() && lng <= neLatLng.getLng()) {
         
-        // 마커에 저장된 음식점 정보 가져오기
-        const restaurantData = marker.getData();
+        // 마커에 저장된 음식점 정보 가져오기 (커스텀 속성 사용)
+        const restaurantData = marker.restaurantData;
         if (restaurantData) {
-          restaurantsInBounds.push({
-            ...restaurantData,
-            lat,
-            lng
-          });
+          restaurantsInBounds.push(restaurantData);
         }
       }
     });
@@ -395,6 +394,13 @@ const Map = ({
             position: position,
             image: getMarkerImage(restaurant.rating),
           });
+
+          // 마커에 레스토랑 데이터 저장 (커스텀 속성으로)
+          marker.restaurantData = {
+            ...restaurant,
+            lat: coordinates.lat,
+            lng: coordinates.lng
+          };
 
           // 마커 클릭 이벤트
           window.kakao.maps.event.addListener(marker, 'click', () => {

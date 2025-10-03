@@ -12,7 +12,7 @@ const NearbyContainer = styled.div.withConfig({
   bottom: ${spacing[5]};
   left: ${spacing[5]};
   right: ${spacing[5]};
-  max-height: 40vh;
+  max-height: 66vh;
   z-index: 1000;
   background: ${colors.liquid.glass};
   border-radius: ${borderRadius.xl};
@@ -23,10 +23,11 @@ const NearbyContainer = styled.div.withConfig({
   overflow: hidden;
   transform: ${props => props.isVisible ? 'translateY(0)' : 'translateY(100%)'};
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
   user-select: none;
   -webkit-user-drag: none;
   -webkit-touch-callout: none;
+  opacity: ${props => props.isVisible ? '1' : '0'};
+  pointer-events: ${props => props.isVisible ? 'auto' : 'none'};
   
   &::before {
     content: '';
@@ -66,7 +67,7 @@ const CloseButton = styled(Button)`
 `;
 
 const RestaurantList = styled.div`
-  max-height: 30vh;
+  max-height: 50vh;
   overflow-y: auto;
   padding: ${spacing[2]};
   position: relative;
@@ -175,6 +176,12 @@ const NearbyRestaurants = ({
   onClose, 
   onRestaurantSelect 
 }) => {
+  console.log('NearbyRestaurants 렌더링:', { 
+    isVisible, 
+    restaurantsCount: restaurants.length,
+    restaurants: restaurants 
+  });
+
   const handleRestaurantClick = (restaurant) => {
     if (onRestaurantSelect) {
       onRestaurantSelect(restaurant);
@@ -190,7 +197,7 @@ const NearbyRestaurants = ({
 
   return (
     <NearbyContainer isVisible={isVisible}>
-      <Header>
+      {/* <Header>
         <Title>
           🍽️ 내 주변 미쉐린 ({restaurants.length}개)
         </Title>
@@ -202,7 +209,7 @@ const NearbyRestaurants = ({
         >
           닫기
         </CloseButton>
-      </Header>
+      </Header> */}
       
       <RestaurantList>
         {restaurants.length === 0 ? (
