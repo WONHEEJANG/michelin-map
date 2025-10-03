@@ -7,7 +7,7 @@ import RestaurantCard from '../../organisms/RestaurantCard/RestaurantCard';
 import NearbyRestaurants from '../../organisms/NearbyRestaurants/NearbyRestaurants';
 import { filterRestaurantsInBounds, sortRestaurantsByDistance, getMapBounds } from '../../../utils/mapUtils';
 import { geocodeAddress } from '../../../utils/geocoding';
-import { colors, spacing } from '../../tokens';
+import { colors, spacing, shadows, borderRadius } from '../../tokens';
 
 const PageContainer = styled.div`
   display: flex;
@@ -21,10 +21,25 @@ const Header = styled.header`
   align-items: center;
   justify-content: center;
   height: 80px;
-  background: ${colors.background.primary};
-  border-bottom: 1px solid ${colors.border.primary};
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: ${colors.liquid.glass};
+  border-bottom: 1px solid ${colors.border.glass};
+  box-shadow: ${shadows.glass};
   z-index: 1000;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    opacity: 0.8;
+    pointer-events: none;
+  }
 `;
 
 const HeaderTitle = styled.h1`
@@ -35,6 +50,22 @@ const HeaderTitle = styled.h1`
   display: flex;
   align-items: center;
   gap: ${spacing[3]};
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: -8px;
+    right: -8px;
+    bottom: -4px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%);
+    border-radius: ${borderRadius.lg};
+    opacity: 0.6;
+    z-index: -1;
+  }
 `;
 
 const MapSection = styled.div`
@@ -51,6 +82,9 @@ const RestaurantCardContainer = styled.div`
   z-index: 1000;
   display: flex;
   justify-content: center;
+  user-select: none;
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
 `;
 
 const MichelinMapPage = ({ 
@@ -165,6 +199,33 @@ const MichelinMapPage = ({
     }
   }, [isNearbyVisible, markersLoaded, updateNearbyRestaurants]);
 
+  // 현재 지도에서 찾기 핸들러
+  const handleShowFilteredRestaurants = useCallback(() => {
+    if (!markersLoaded) {
+      console.log('마커가 아직 로딩 중입니다. 잠시 후 다시 시도해주세요.');
+      return;
+    }
+    
+    console.log('필터링된 음식점들:', filteredRestaurants);
+    
+    // 필터링된 음식점들을 지도에 마커로 표시
+    if (filteredRestaurants.length > 0) {
+      console.log(`${filteredRestaurants.length}개의 필터링된 음식점을 지도에 표시합니다.`);
+      
+      // Map 컴포넌트에 필터링된 음식점들을 전달하면
+      // useEffect에서 자동으로 마커가 업데이트됩니다.
+      // 추가적인 로직은 필요하지 않습니다.
+    } else {
+      console.log('표시할 필터링된 음식점이 없습니다.');
+    }
+  }, [markersLoaded, filteredRestaurants]);
+
+  // 현재 지도 영역 내의 음식점들 핸들러
+  const handleRestaurantsInCurrentBounds = useCallback((restaurantsInBounds) => {
+    console.log('현재 지도 영역 내 음식점들:', restaurantsInBounds);
+    console.log(`현재 지도에 표시된 음식점: ${restaurantsInBounds.length}개`);
+  }, []);
+
   // 내 주변 음식점에서 레스토랑 선택 핸들러
   const handleNearbyRestaurantSelect = useCallback((restaurant) => {
     setSelectedRestaurant(restaurant);
@@ -197,12 +258,6 @@ const MichelinMapPage = ({
 
   return (
     <PageContainer>
-      <Header>
-        <HeaderTitle>
-          🍽️ 서울 미슐랭 가이드
-        </HeaderTitle>
-      </Header>
-      
       <MapSection>
         <Map
           restaurants={filteredRestaurants}
@@ -211,6 +266,8 @@ const MichelinMapPage = ({
           onFilterToggle={handleFilterToggle}
           onMapClick={handleMapClick}
           onNearbyToggle={handleNearbyToggle}
+          onShowFilteredRestaurants={handleShowFilteredRestaurants}
+          onRestaurantsInCurrentBounds={handleRestaurantsInCurrentBounds}
           onMapReady={handleMapReady}
           onRestaurantsWithCoords={handleRestaurantsWithCoords}
           onMarkersLoaded={handleMarkersLoaded}

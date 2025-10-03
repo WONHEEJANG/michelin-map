@@ -13,17 +13,33 @@ const FilterContainer = styled.div.withConfig({
   left: ${spacing[5]};
   right: ${spacing[5]};
   z-index: 1000;
-  background: ${colors.background.primary};
-  border-radius: ${borderRadius.lg};
+  background: ${colors.liquid.glass};
+  border-radius: ${borderRadius.xl};
   padding: ${spacing[6]};
-  box-shadow: ${shadows.lg};
-  border: 1px solid ${colors.border.primary};
+  box-shadow: ${shadows.glass};
+  border: 1px solid ${colors.border.glass};
   max-height: 80vh;
   overflow-y: auto;
-  transition: all 0.3s ease-in-out;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   transform: ${({ isCollapsed }) => isCollapsed ? 'translateY(-100%)' : 'translateY(0)'};
   opacity: ${({ isCollapsed }) => isCollapsed ? '0' : '1'};
   pointer-events: ${({ isCollapsed }) => isCollapsed ? 'none' : 'auto'};
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    border-radius: inherit;
+    opacity: 0.8;
+    pointer-events: none;
+  }
 `;
 
 const FilterHeader = styled.div`

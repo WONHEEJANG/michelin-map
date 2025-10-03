@@ -36,6 +36,7 @@ export const borderRadius = {
 };
 
 export const shadows = {
+  // Liquid Glass 스타일 그림자
   sm: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
   base: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
   md: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
@@ -43,6 +44,18 @@ export const shadows = {
   xl: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
   '2xl': '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
   inner: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)',
+  
+  // Liquid Glass 전용 그림자
+  glass: '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
+  glassHover: '0 12px 40px 0 rgba(31, 38, 135, 0.45)',
+  glassActive: '0 16px 48px 0 rgba(31, 38, 135, 0.55)',
+  glassSubtle: '0 4px 16px 0 rgba(31, 38, 135, 0.2)',
+  glassStrong: '0 20px 60px 0 rgba(31, 38, 135, 0.6)',
+  
+  // Apple 스타일 그림자
+  apple: '0 4px 16px rgba(0, 0, 0, 0.1)',
+  appleHover: '0 8px 24px rgba(0, 0, 0, 0.15)',
+  appleActive: '0 2px 8px rgba(0, 0, 0, 0.2)',
 };
 
 export default { spacing, borderRadius, shadows };

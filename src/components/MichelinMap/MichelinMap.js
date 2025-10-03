@@ -93,15 +93,15 @@ const MichelinMap = () => {
   const getMarkerImage = (rating) => {
     if (!window.kakao || !window.kakao.maps) return null;
     
-        // 4등급 체계: 3, 2, 1, 기타 (bib, small, shop, 0)
-        const colors = {
-          '3 Stars': '#D10F0F',  // 가장 진한 빨간색
-          '2 Stars': '#E24949',  // 진한 빨간색
-          '1 Star': '#FFB2B2',   // 중간 빨간색
-          '기타': '#B3B3B3'      // 가장 연한 빨간색 (bib, small, shop, 0)
-        };
+    // 4등급 체계: 3, 2, 1, 기타 (bib, small, shop, 0)
+    const colors = {
+      '3 Stars': 'rgba(209, 15, 15, 0.9)',  // 가장 진한 빨간색
+      '2 Stars': 'rgba(226, 73, 73, 0.9)',  // 진한 빨간색
+      '1 Star': 'rgba(255, 178, 178, 0.9)',   // 중간 빨간색
+      '기타': 'rgba(179, 179, 179, 0.9)'      // 가장 연한 빨간색 (bib, small, shop, 0)
+    };
 
-    let color = '#B3B3B3'; // 기본값: 기타 등급
+    let color = 'rgba(179, 179, 179, 0.9)'; // 기본값: 기타 등급
     if (rating.includes('3 Stars')) {
       color = colors['3 Stars'];
     } else if (rating.includes('2 Stars')) {
@@ -113,9 +113,39 @@ const MichelinMap = () => {
     }
 
     const svg = `
-      <svg width="30" height="30" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="15" cy="15" r="12" fill="${color}" stroke="white" stroke-width="2"/>
-        <circle cx="15" cy="15" r="6" fill="white"/>
+      <svg width="40" height="40" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="glassEffect" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="2"/>
+            <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.4 0"/>
+          </filter>
+          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <feMerge> 
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+          <filter id="innerGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="1" result="coloredBlur"/>
+            <feMerge> 
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+        <!-- 외부 그림자 -->
+        <circle cx="20" cy="20" r="16" fill="rgba(0, 0, 0, 0.3)" filter="url(#glassEffect)"/>
+        <!-- 메인 원 배경 -->
+        <circle cx="20" cy="20" r="14" fill="rgba(255, 255, 255, 0.1)" stroke="rgba(255, 255, 255, 0.3)" stroke-width="1"/>
+        <!-- 메인 원 -->
+        <circle cx="20" cy="20" r="12" fill="${color}" stroke="rgba(255, 255, 255, 0.9)" stroke-width="2" filter="url(#glow)"/>
+        <!-- 내부 원 -->
+        <circle cx="20" cy="20" r="7" fill="rgba(255, 255, 255, 0.9)" filter="url(#innerGlow)"/>
+        <!-- 하이라이트 -->
+        <circle cx="18" cy="18" r="2.5" fill="rgba(255, 255, 255, 0.8)"/>
+        <!-- 반사 효과 -->
+        <ellipse cx="18" cy="16" rx="3" ry="1.5" fill="rgba(255, 255, 255, 0.4)"/>
       </svg>
     `;
     
@@ -137,8 +167,8 @@ const MichelinMap = () => {
           if (position) {
             const imageSrc = getMarkerImage(restaurant.rating);
             if (imageSrc) {
-              const imageSize = new window.kakao.maps.Size(30, 30);
-              const imageOption = { offset: new window.kakao.maps.Point(15, 15) };
+              const imageSize = new window.kakao.maps.Size(40, 40);
+              const imageOption = { offset: new window.kakao.maps.Point(20, 20) };
               const markerImage = new window.kakao.maps.MarkerImage(imageSrc, imageSize, imageOption);
 
               const marker = new window.kakao.maps.Marker({

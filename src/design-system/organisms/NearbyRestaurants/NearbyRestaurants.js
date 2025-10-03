@@ -12,23 +12,45 @@ const NearbyContainer = styled.div.withConfig({
   bottom: ${spacing[5]};
   left: ${spacing[5]};
   right: ${spacing[5]};
-  max-height: 60vh;
+  max-height: 40vh;
   z-index: 1000;
-  background: white;
-  border-radius: ${borderRadius.lg};
-  box-shadow: ${shadows.xl};
+  background: ${colors.liquid.glass};
+  border-radius: ${borderRadius.xl};
+  box-shadow: ${shadows.glass};
+  border: 1px solid ${colors.border.glass};
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   overflow: hidden;
   transform: ${props => props.isVisible ? 'translateY(0)' : 'translateY(100%)'};
-  transition: transform 0.3s ease-in-out;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  user-select: none;
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    border-radius: inherit;
+    opacity: 0.8;
+    pointer-events: none;
+  }
 `;
 
 const Header = styled.div`
   padding: ${spacing[4]} ${spacing[5]};
-  border-bottom: 1px solid ${colors.gray[200]};
+  border-bottom: 1px solid ${colors.border.glass};
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: ${colors.gray[50]};
+  background: ${colors.liquid.backdrop};
+  position: relative;
+  z-index: 1;
 `;
 
 const Title = styled.h3`
@@ -44,21 +66,27 @@ const CloseButton = styled(Button)`
 `;
 
 const RestaurantList = styled.div`
-  max-height: 50vh;
+  max-height: 30vh;
   overflow-y: auto;
   padding: ${spacing[2]};
+  position: relative;
+  z-index: 1;
 `;
 
 const RestaurantCard = styled(Card)`
   margin-bottom: ${spacing[3]};
   cursor: pointer;
-  transition: all 0.2s ease;
-  border: 1px solid ${colors.gray[200]};
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: ${colors.liquid.backdrop};
+  border: 1px solid ${colors.border.secondary};
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   
   &:hover {
     transform: translateY(-2px);
-    box-shadow: ${shadows.lg};
+    box-shadow: ${shadows.glass};
     border-color: ${colors.primary[300]};
+    background: ${colors.liquid.glass};
   }
   
   &:last-child {

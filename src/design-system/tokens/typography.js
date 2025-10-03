@@ -2,7 +2,7 @@
 export const typography = {
   // Font Families
   fontFamily: {
-    primary: '"Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    primary: '"Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     mono: '"SF Mono", "Monaco", "Inconsolata", "Roboto Mono", monospace',
   },
   

@@ -26,12 +26,38 @@ const ControlButtons = styled.div`
   z-index: 1000;
   display: flex;
   flex-direction: column;
-  gap: ${spacing[2]};
+  gap: ${spacing[3]};
 `;
 
 const ControlButton = styled(Button)`
-  box-shadow: ${shadows.lg};
-  min-width: 120px;
+  box-shadow: ${shadows.glass};
+  min-width: 100px;
+  height: 48px;
+  padding: ${spacing[2]} ${spacing[3]};
+  font-size: 14px;
+  font-weight: 500;
+  background: ${colors.liquid.glass};
+  border: 1px solid ${colors.border.glass};
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  color: ${colors.text.primary};
+  
+  span {
+    font-size: 16px;
+    margin-right: ${spacing[1]};
+  }
+  
+  &:hover {
+    background: ${colors.liquid.glassHover};
+    transform: translateY(-2px);
+    box-shadow: ${shadows.glassHover};
+  }
+  
+  &:active {
+    background: ${colors.liquid.glassActive};
+    transform: translateY(0);
+    box-shadow: ${shadows.glassActive};
+  }
 `;
 
 const LocationError = styled.div`
@@ -82,9 +108,11 @@ const Map = ({
   onFilterToggle,
   onMapClick,
   onNearbyToggle,
+  onShowFilteredRestaurants,
   onMapReady,
   onRestaurantsWithCoords,
   onMarkersLoaded,
+  onRestaurantsInCurrentBounds,
   className 
 }) => {
   const mapRef = useRef(null);
@@ -287,6 +315,50 @@ const Map = ({
     }
   }, [checkKakaoAPI]);
 
+  // 현재 지도에 표시된 마커들의 음식점 정보 가져오기
+  const getRestaurantsInCurrentBounds = useCallback(() => {
+    if (!mapInstance.current || !checkKakaoAPI()) {
+      console.log('지도 초기화 또는 API 확인 실패');
+      return [];
+    }
+
+    const bounds = mapInstance.current.getBounds();
+    const swLatLng = bounds.getSouthWest();
+    const neLatLng = bounds.getNorthEast();
+    
+    console.log('현재 지도 경계:', {
+      남서쪽: { lat: swLatLng.getLat(), lng: swLatLng.getLng() },
+      북동쪽: { lat: neLatLng.getLat(), lng: neLatLng.getLng() }
+    });
+
+    // 현재 지도에 표시된 마커들 중에서 경계 내에 있는 것들만 필터링
+    const restaurantsInBounds = [];
+    
+    markersRef.current.forEach(marker => {
+      const position = marker.getPosition();
+      const lat = position.getLat();
+      const lng = position.getLng();
+      
+      // 현재 지도 경계 내에 있는지 확인
+      if (lat >= swLatLng.getLat() && lat <= neLatLng.getLat() &&
+          lng >= swLatLng.getLng() && lng <= neLatLng.getLng()) {
+        
+        // 마커에 저장된 음식점 정보 가져오기
+        const restaurantData = marker.getData();
+        if (restaurantData) {
+          restaurantsInBounds.push({
+            ...restaurantData,
+            lat,
+            lng
+          });
+        }
+      }
+    });
+    
+    console.log(`현재 지도에 표시된 음식점: ${restaurantsInBounds.length}개`);
+    return restaurantsInBounds;
+  }, []);
+
   // 마커들을 지도에 추가
   const addMarkersToMap = useCallback(async () => {
     if (!mapInstance.current || !checkKakaoAPI()) {
@@ -413,7 +485,7 @@ const Map = ({
     if (mapInstance.current) {
       addMarkersToMap();
     }
-  }, [addMarkersToMap]);
+  }, [addMarkersToMap, restaurants]);
 
   // 현재 위치가 변경될 때 마커 추가
   useEffect(() => {
@@ -437,7 +509,7 @@ const Map = ({
       
       <ControlButtons>
         <ControlButton
-          variant="primary"
+          variant="glass"
           size="sm"
           onClick={onFilterToggle}
           icon={<span>🔍</span>}
@@ -446,7 +518,7 @@ const Map = ({
         </ControlButton>
         
         <ControlButton
-          variant="secondary"
+          variant="glass"
           size="sm"
           onClick={getCurrentLocation}
           disabled={isGettingLocation}
@@ -456,13 +528,18 @@ const Map = ({
         </ControlButton>
         
         <ControlButton
-          variant="tertiary"
+          variant="glass"
           size="sm"
-          onClick={onNearbyToggle}
+          onClick={async () => {
+            const restaurantsInBounds = await getRestaurantsInCurrentBounds();
+            if (onRestaurantsInCurrentBounds) {
+              onRestaurantsInCurrentBounds(restaurantsInBounds);
+            }
+          }}
           disabled={!markersLoaded}
           icon={<span>🍽️</span>}
         >
-          {markersLoaded ? '내 주변 미쉐린' : '로딩 중...'}
+          {markersLoaded ? '현재 지도에서 찾기' : '로딩 중...'}
         </ControlButton>
       </ControlButtons>
       

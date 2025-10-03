@@ -30,52 +30,64 @@
 }
 
 .filter-toggle {
-  background: #007bff;
-  color: white;
-  border: none;
+  background: rgba(255, 255, 255, 0.25);
+  color: #1F2937;
+  border: 1px solid rgba(255, 255, 255, 0.3);
   padding: 8px 16px;
   border-radius: 20px;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
 }
 
 .filter-toggle:hover {
-  background: #0056b3;
-  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.45);
 }
 
 .filter-toggle.active {
-  background: #28a745;
+  background: rgba(14, 165, 233, 0.8);
+  color: white;
+  border-color: rgba(14, 165, 233, 0.5);
 }
 
 .location-button {
-  background: #28a745;
+  background: rgba(52, 211, 153, 0.8);
   color: white;
-  border: none;
+  border: 1px solid rgba(52, 211, 153, 0.5);
   padding: 8px 12px;
   border-radius: 20px;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   min-width: 40px;
   height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
 }
 
 .location-button:hover:not(:disabled) {
-  background: #218838;
-  transform: translateY(-1px);
+  background: rgba(52, 211, 153, 0.9);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.45);
 }
 
 .location-button:disabled {
-  background: #6c757d;
+  background: rgba(107, 114, 128, 0.6);
   cursor: not-allowed;
   transform: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .location-button.loading {
@@ -89,13 +101,16 @@
 }
 
 .restaurant-count {
-  background: #f8f9fa;
-  color: #6c757d;
+  background: rgba(255, 255, 255, 0.25);
+  color: #6B7280;
   padding: 6px 12px;
   border-radius: 16px;
   font-size: 12px;
   font-weight: 500;
-  border: 1px solid #dee2e6;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.2);
 }
 
 .map-container {
@@ -201,12 +216,14 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background: white;
-  border-top: 1px solid #e0e0e0;
-  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.8);
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 -8px 32px 0 rgba(31, 38, 135, 0.37);
   z-index: 1000;
   max-height: 50vh;
   overflow-y: auto;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
 .loading-container {

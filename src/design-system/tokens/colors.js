@@ -1,71 +1,84 @@
-// TDS 기반 색상 토큰
+// Apple Liquid Glass 스타일 색상 토큰
 export const colors = {
-  // Primary Colors (토스 블루)
+  // Primary Colors (Apple Blue 계열)
   primary: {
-    50: '#F0F4FF',
-    100: '#E0E9FF',
-    200: '#C7D6FF',
-    300: '#A5B8FF',
-    400: '#8F9EFF',
-    500: '#7B8AFF',
-    600: '#6B7AFF',
-    700: '#5D6AFF',
-    800: '#4F5AFF',
-    900: '#3B47FF',
+    50: '#F0F8FF',
+    100: '#E0F2FE',
+    200: '#BAE6FD',
+    300: '#7DD3FC',
+    400: '#38BDF8',
+    500: '#0EA5E9',
+    600: '#0284C7',
+    700: '#0369A1',
+    800: '#075985',
+    900: '#0C4A6E',
   },
   
-  // Secondary Colors (회색)
+  // Secondary Colors (Apple Gray 계열)
   gray: {
-    50: '#F8F9FA',
-    100: '#F1F3F4',
-    200: '#E8EAED',
-    300: '#DADCE0',
-    400: '#BDC1C6',
-    500: '#9AA0A6',
-    600: '#80868B',
-    700: '#5F6368',
-    800: '#3C4043',
-    900: '#202124',
+    50: '#FAFAFA',
+    100: '#F4F4F5',
+    200: '#E4E4E7',
+    300: '#D4D4D8',
+    400: '#A1A1AA',
+    500: '#71717A',
+    600: '#52525B',
+    700: '#3F3F46',
+    800: '#27272A',
+    900: '#18181B',
   },
   
-  // Semantic Colors
+  // Semantic Colors (Apple 스타일)
   semantic: {
-    success: '#00C851',
-    warning: '#FFB800',
-    error: '#FF5722',
-    info: '#2196F3',
+    success: '#34D399',
+    warning: '#FBBF24',
+    error: '#F87171',
+    info: '#60A5FA',
   },
   
-  // Background Colors
+  // Liquid Glass Background Colors
   background: {
-    primary: '#FFFFFF',
-    secondary: '#F8F9FA',
-    tertiary: '#F1F3F4',
-    overlay: 'rgba(0, 0, 0, 0.5)',
+    primary: 'rgba(255, 255, 255, 0.8)',
+    secondary: 'rgba(248, 250, 252, 0.6)',
+    tertiary: 'rgba(241, 245, 249, 0.4)',
+    overlay: 'rgba(0, 0, 0, 0.3)',
+    glass: 'rgba(255, 255, 255, 0.25)',
+    glassDark: 'rgba(0, 0, 0, 0.1)',
   },
   
-  // Text Colors
+  // Text Colors (Apple 스타일)
   text: {
-    primary: '#202124',
-    secondary: '#5F6368',
-    tertiary: '#9AA0A6',
-    disabled: '#BDC1C6',
+    primary: '#1F2937',
+    secondary: '#6B7280',
+    tertiary: '#9CA3AF',
+    disabled: '#D1D5DB',
     inverse: '#FFFFFF',
+    glass: 'rgba(31, 41, 55, 0.8)',
   },
   
-  // Border Colors
+  // Border Colors (Liquid Glass 스타일)
   border: {
-    primary: '#E8EAED',
-    secondary: '#DADCE0',
-    focus: '#7B8AFF',
+    primary: 'rgba(255, 255, 255, 0.2)',
+    secondary: 'rgba(255, 255, 255, 0.1)',
+    focus: '#0EA5E9',
+    glass: 'rgba(255, 255, 255, 0.3)',
   },
   
-  // Michelin Rating Colors
+  // Michelin Rating Colors (유지)
   michelin: {
     '3-stars': '#D10F0F',
     '2-stars': '#E24949',
     '1-star': '#FFB2B2',
     other: '#B3B3B3',
+  },
+  
+  // Liquid Glass 전용 색상
+  liquid: {
+    glass: 'rgba(255, 255, 255, 0.25)',
+    glassHover: 'rgba(255, 255, 255, 0.35)',
+    glassActive: 'rgba(255, 255, 255, 0.45)',
+    backdrop: 'rgba(255, 255, 255, 0.1)',
+    highlight: 'rgba(255, 255, 255, 0.5)',
   }
 };
 
