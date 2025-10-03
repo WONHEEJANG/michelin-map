@@ -1,5 +1,5 @@
 // 카카오맵 API 설정
-export const REACT_APP_KAKAO_MAP_API_KEY = process.env.REACT_APP_KAKAO_MAP_API_KEY;
+export const REACT_APP_KAKAO_MAP_API_KEY = process.env.REACT_APP_KAKAO_MAP_API_KEY?.trim();
 
 // 디버깅용 로그
 console.log('🔑 카카오맵 API 키 확인:', {
