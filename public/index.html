@@ -12,48 +12,7 @@
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
-    <title>카카오 지도 샘플</title>
-    <script>
-      // 카카오맵 API 로드
-      (function() {
-        // API 키 직접 설정
-        const API_KEY = 'd0b37e1734b022c9fdf66ebf05fadcd1';
-        
-        // API 키 유효성 검사
-        if (!API_KEY || API_KEY.length < 10) {
-          console.error('카카오맵 API 키가 올바르지 않습니다.');
-          console.error('현재 API 키:', API_KEY);
-          return;
-        }
-        
-        console.log('카카오맵 API 키 로드됨:', API_KEY);
-        
-        const script = document.createElement('script');
-        script.type = 'text/javascript';
-        script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${API_KEY}&libraries=services&autoload=false`;
-        script.async = true;
-        
-        script.onload = function() {
-          console.log('카카오맵 API 로드 완료');
-          if (window.kakao && window.kakao.maps) {
-            // autoload=false이므로 수동으로 초기화
-            window.kakao.maps.load(function() {
-              console.log('카카오맵 초기화 완료');
-            });
-          } else {
-            console.error('카카오맵 API 로드 후에도 kakao.maps가 없습니다');
-          }
-        };
-        
-        script.onerror = function(error) {
-          console.error('카카오맵 API 로드 실패:', error);
-          console.error('API 키:', API_KEY);
-          console.error('URL:', script.src);
-        };
-        
-        document.head.appendChild(script);
-      })();
-    </script>
+    <title>서울 미슐랭 가이드 지도</title>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
