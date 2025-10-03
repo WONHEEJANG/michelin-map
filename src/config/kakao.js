@@ -1,5 +1,5 @@
 // 카카오맵 API 설정
-export const KAKAO_MAP_API_KEY = process.env.REACT_APP_KAKAO_MAP_API_KEY || 'd0b37e1734b022c9fdf66ebf05fadcd1';
+export const KAKAO_MAP_API_KEY = process.env.REACT_APP_KAKAO_MAP_API_KEY;
 
 // 카카오맵 API 로드 함수
 export const loadKakaoMapAPI = () => {
@@ -11,9 +11,9 @@ export const loadKakaoMapAPI = () => {
     }
 
     // API 키 유효성 검사
-    if (!KAKAO_MAP_API_KEY || KAKAO_MAP_API_KEY.length < 10) {
-      console.error('카카오맵 API 키가 올바르지 않습니다.');
-      reject(new Error('Invalid API key'));
+    if (!KAKAO_MAP_API_KEY) {
+      console.error('카카오맵 API 키가 설정되지 않았습니다. 환경 변수 REACT_APP_KAKAO_MAP_API_KEY를 확인해주세요.');
+      reject(new Error('API key not configured'));
       return;
     }
 

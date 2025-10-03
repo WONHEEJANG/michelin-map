@@ -14,7 +14,7 @@
 Vercel 대시보드에서 다음 환경 변수를 설정:
 
 ```
-REACT_APP_KAKAO_MAP_API_KEY=d0b37e1734b022c9fdf66ebf05fadcd1
+REACT_APP_KAKAO_MAP_API_KEY=your_kakao_api_key_here
 ```
 
 ## 4. 빌드 설정 확인
