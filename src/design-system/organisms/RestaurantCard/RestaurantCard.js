@@ -177,6 +177,18 @@ const RestaurantCardContainer = styled.div`
   -webkit-backdrop-filter: blur(20px);
   overflow: hidden;
   position: relative;
+  animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
   
   &::before {
     content: '';
@@ -204,7 +216,7 @@ const RestaurantImage = styled.img`
 const RestaurantCard = ({ 
   restaurant, 
   onClose, 
-  onSelect 
+  onSelect
 }) => {
   const [imageError, setImageError] = React.useState(false);
   
