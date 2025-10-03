@@ -184,6 +184,7 @@ const NearbyRestaurants = ({
 
   const handleRestaurantClick = (restaurant) => {
     if (onRestaurantSelect) {
+      // NearbyRestaurants는 유지하고 음식점만 선택
       onRestaurantSelect(restaurant);
     }
   };

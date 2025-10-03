@@ -79,7 +79,7 @@ const RestaurantCardContainer = styled.div`
   bottom: ${spacing[5]};
   left: ${spacing[5]};
   right: ${spacing[5]};
-  z-index: 1000;
+  z-index: 1100; // NearbyRestaurants보다 높은 z-index로 설정
   display: flex;
   justify-content: center;
   user-select: none;
@@ -243,7 +243,8 @@ const MichelinMapPage = ({
   // 내 주변 음식점에서 레스토랑 선택 핸들러
   const handleNearbyRestaurantSelect = useCallback((restaurant) => {
     setSelectedRestaurant(restaurant);
-    setIsNearbyVisible(false);
+    // NearbyRestaurants는 유지하고 음식점만 선택
+    // setIsNearbyVisible(false); // 이 줄을 제거하여 패널이 유지되도록 함
   }, []);
 
   // 맵 인스턴스 받기 핸들러

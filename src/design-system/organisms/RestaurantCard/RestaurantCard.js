@@ -169,7 +169,7 @@ const RestaurantCardContainer = styled.div`
   position: relative;
   max-width: 400px;
   width: 100%;
-  background: ${colors.liquid.glass};
+  background: rgba(255, 255, 255, 0.95); // 더 불투명한 배경으로 변경
   border-radius: ${borderRadius.xl};
   box-shadow: ${shadows.glass};
   border: 1px solid ${colors.border.glass};
@@ -185,9 +185,9 @@ const RestaurantCardContainer = styled.div`
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%);
     border-radius: inherit;
-    opacity: 0.8;
+    opacity: 0.9;
     pointer-events: none;
   }
 `;
