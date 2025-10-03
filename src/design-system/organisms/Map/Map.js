@@ -360,7 +360,7 @@ const Map = ({
     return restaurantsInBounds;
   }, []);
 
-  // 모든 마커를 초기화 (한 번만 실행)
+  // 모든 마커를 초기화 (한 번만 실행) - Promise.all 사용
   const initializeAllMarkers = useCallback(async () => {
     if (!mapInstance.current || !checkKakaoAPI()) {
       console.log('지도 초기화 또는 API 확인 실패');
@@ -379,17 +379,40 @@ const Map = ({
     });
     allMarkersRef.current = allMarkersRef.current.filter(marker => marker.isCurrentLocation);
 
-    // 레스토랑 마커들 추가
-    let addedCount = 0;
-    const restaurantsWithCoords = [];
-    
-    for (let i = 0; i < restaurants.length; i++) {
-      const restaurant = restaurants[i];
+    try {
+      // Promise.all을 사용해서 모든 좌표 변환을 병렬로 처리
+      console.log('🚀 병렬 좌표 변환 시작...');
+      const startTime = Date.now();
       
-      try {
-        // 주소를 좌표로 변환
-        const coordinates = await geocodeAddress(restaurant.address);
-        
+      const coordinatePromises = restaurants.map(async (restaurant, index) => {
+        try {
+          const coordinates = await geocodeAddress(restaurant.address);
+          return {
+            restaurant,
+            coordinates,
+            index
+          };
+        } catch (error) {
+          console.log(`좌표 변환 실패: ${restaurant.name}`, error);
+          return {
+            restaurant,
+            coordinates: null,
+            index
+          };
+        }
+      });
+
+      // 모든 좌표 변환을 병렬로 실행
+      const results = await Promise.all(coordinatePromises);
+      
+      const endTime = Date.now();
+      console.log(`⚡ 병렬 좌표 변환 완료: ${endTime - startTime}ms`);
+
+      // 성공한 결과들로 마커 생성
+      let addedCount = 0;
+      const restaurantsWithCoords = [];
+      
+      results.forEach(({ restaurant, coordinates }) => {
         if (coordinates) {
           const position = new window.kakao.maps.LatLng(coordinates.lat, coordinates.lng);
           const marker = new window.kakao.maps.Marker({
@@ -420,35 +443,38 @@ const Map = ({
           allMarkersRef.current.push(marker);
           addedCount++;
           
-          // 좌표가 변환된 음식점을 배열에 추가 (images 필드 포함)
+          // 좌표가 변환된 음식점을 배열에 추가
           restaurantsWithCoords.push({
             ...restaurant,
             lat: coordinates.lat,
             lng: coordinates.lng
           });
           
-          console.log(`마커 추가: ${restaurant.name} (${coordinates.lat}, ${coordinates.lng})`);
+          console.log(`✅ 마커 추가: ${restaurant.name} (${coordinates.lat}, ${coordinates.lng})`);
         } else {
-          console.log(`좌표 변환 실패: ${restaurant.name}`);
+          console.log(`❌ 좌표 변환 실패: ${restaurant.name}`);
         }
-      } catch (error) {
-        console.log(`에러: ${restaurant.name}`, error);
+      });
+      
+      console.log(`🎉 총 ${addedCount}개 마커 초기화 완료 (${endTime - startTime}ms)`);
+      setIsLoadingMarkers(false);
+      setMarkersLoaded(true);
+      
+      // 좌표가 있는 음식점들을 부모에게 전달
+      if (onRestaurantsWithCoords) {
+        console.log(`좌표가 변환된 음식점 ${restaurantsWithCoords.length}개를 부모에게 전달`);
+        onRestaurantsWithCoords(restaurantsWithCoords);
       }
-    }
-    
-    console.log(`총 ${addedCount}개 마커 초기화됨`);
-    setIsLoadingMarkers(false);
-    setMarkersLoaded(true);
-    
-    // 좌표가 있는 음식점들을 부모에게 전달
-    if (onRestaurantsWithCoords) {
-      console.log(`좌표가 변환된 음식점 ${restaurantsWithCoords.length}개를 부모에게 전달`);
-      onRestaurantsWithCoords(restaurantsWithCoords);
-    }
-    
-    // 마커 로딩 완료를 부모에게 알림
-    if (onMarkersLoaded) {
-      onMarkersLoaded(true);
+      
+      // 마커 로딩 완료를 부모에게 알림
+      if (onMarkersLoaded) {
+        onMarkersLoaded(true);
+      }
+      
+    } catch (error) {
+      console.error('마커 초기화 중 오류 발생:', error);
+      setIsLoadingMarkers(false);
+      setMarkersLoaded(false);
     }
   }, [restaurants, onRestaurantSelect, getMarkerImage, checkKakaoAPI, onRestaurantsWithCoords, onMarkersLoaded]);
 
