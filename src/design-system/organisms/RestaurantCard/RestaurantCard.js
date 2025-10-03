@@ -229,7 +229,7 @@ const RestaurantCard = ({
   const getFirstImage = () => {
     if (restaurant.images && restaurant.images.length > 0) {
       const filename = restaurant.images[0].filename.replace(/\.(jpeg|png)$/i, '.jpg');
-      return `/restaurant_images/${filename}`;
+      return `./restaurant_images/${filename}`;
     }
     return null;
   };

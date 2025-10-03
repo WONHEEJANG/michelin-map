@@ -1,0 +1,1 @@
+/api/* https://dapi.kakao.com/v2/local/search/address.json:query=:splat 200
