@@ -176,11 +176,11 @@ const NearbyRestaurants = ({
   onClose, 
   onRestaurantSelect 
 }) => {
-  console.log('NearbyRestaurants 렌더링:', { 
-    isVisible, 
-    restaurantsCount: restaurants.length,
-    restaurants: restaurants 
-  });
+  // console.log('NearbyRestaurants 렌더링:', { 
+  //   isVisible, 
+  //   restaurantsCount: restaurants.length,
+  //   restaurants: restaurants 
+  // });
 
   const handleRestaurantClick = (restaurant) => {
     if (onRestaurantSelect) {

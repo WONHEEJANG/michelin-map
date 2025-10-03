@@ -116,7 +116,6 @@ const MichelinMapPage = ({
     
     // 마커 필터링 함수가 있으면 호출
     if (filterMarkersFunction) {
-      console.log('마커 필터링 실행:', filtered.length, '개');
       filterMarkersFunction(filtered);
     }
   }, [filterMarkersFunction]);
@@ -268,25 +267,21 @@ const MichelinMapPage = ({
   // 좌표가 있는 음식점들 업데이트 핸들러
   const handleRestaurantsWithCoords = useCallback((restaurants) => {
     setRestaurantsWithCoords(restaurants);
-    console.log(`좌표가 있는 음식점 업데이트: ${restaurants.length}개`);
   }, []);
 
   // 마커 로딩 완료 핸들러
   const handleMarkersLoaded = useCallback((loaded) => {
     setMarkersLoaded(loaded);
-    console.log(`마커 로딩 상태: ${loaded ? '완료' : '진행중'}`);
   }, []);
 
   // 필터링 함수 받기 핸들러
   const handleFilterMarkers = useCallback((filterFn) => {
     setFilterMarkersFunction(() => filterFn);
-    console.log('필터링 함수를 받았습니다.');
   }, []);
 
   // isNearbyVisible 상태 변화 추적
   useEffect(() => {
-    console.log('isNearbyVisible 상태 변화:', isNearbyVisible);
-    console.log('nearbyRestaurants 상태:', nearbyRestaurants);
+    // 상태 변화 추적 (필요시 디버깅용)
   }, [isNearbyVisible, nearbyRestaurants]);
 
 

@@ -30,14 +30,12 @@ const normalizeAddress = (address) => {
 export const geocodeAddress = (address) => {
   return new Promise((resolve) => {
     if (!address || !window.kakao || !window.kakao.maps || !window.kakao.maps.services) {
-      console.log('카카오맵 API 또는 주소가 없음:', address);
       resolve(null);
       return;
     }
 
     // 주소 정규화
     const normalizedAddress = normalizeAddress(address);
-    console.log(`주소 정규화: ${address} → ${normalizedAddress}`);
 
     // 주소-좌표 변환 객체를 생성합니다
     const geocoder = new window.kakao.maps.services.Geocoder();
@@ -62,11 +60,8 @@ export const geocodeAddress = (address) => {
           lng: parseFloat(bestResult.x)
         };
         
-        console.log(`✅ 정확한 좌표 변환: ${normalizedAddress} → (${coords.lat}, ${coords.lng})`);
-        console.log(`선택된 결과:`, bestResult);
         resolve(coords);
       } else {
-        console.log(`❌ 좌표 변환 실패: ${normalizedAddress} - ${status}`);
         // 실패 시 서울 중심 좌표 반환
         resolve({ lat: 37.5665, lng: 126.9780 });
       }

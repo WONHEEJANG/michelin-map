@@ -79,26 +79,45 @@ const LoadingOverlay = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   z-index: 2000;
   gap: ${spacing[4]};
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: opacity 0.3s ease;
 `;
 
 const LoadingText = styled.div`
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 20px;
+  font-weight: 700;
   color: ${colors.text.primary};
   text-align: center;
+  margin-bottom: ${spacing[2]};
 `;
 
 const LoadingProgress = styled.div`
-  font-size: 14px;
+  font-size: 16px;
   color: ${colors.text.secondary};
   text-align: center;
+  margin-bottom: ${spacing[4]};
+`;
+
+const LoadingSpinner = styled.div`
+  width: 40px;
+  height: 40px;
+  border: 4px solid ${colors.gray[200]};
+  border-top: 4px solid ${colors.primary[600]};
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
 `;
 
 const Map = ({
@@ -123,7 +142,7 @@ const Map = ({
   const [currentLocation, setCurrentLocation] = useState(null);
   const [locationError, setLocationError] = useState(null);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
-  const [isLoadingMarkers, setIsLoadingMarkers] = useState(false);
+  const [isLoadingMarkers, setIsLoadingMarkers] = useState(true); // 처음에 true로 시작
   const [markersLoaded, setMarkersLoaded] = useState(false);
 
   // 카카오맵 API 로드 확인
@@ -367,7 +386,7 @@ const Map = ({
       return;
     }
 
-    console.log('모든 마커 초기화 시작, 레스토랑 수:', restaurants.length);
+    console.log('마커 초기화 시작...');
     setIsLoadingMarkers(true);
     setMarkersLoaded(false);
 
@@ -381,7 +400,6 @@ const Map = ({
 
     try {
       // Promise.all을 사용해서 모든 좌표 변환을 병렬로 처리
-      console.log('🚀 병렬 좌표 변환 시작...');
       const startTime = Date.now();
       
       const coordinatePromises = restaurants.map(async (restaurant, index) => {
@@ -393,7 +411,6 @@ const Map = ({
             index
           };
         } catch (error) {
-          console.log(`좌표 변환 실패: ${restaurant.name}`, error);
           return {
             restaurant,
             coordinates: null,
@@ -406,7 +423,7 @@ const Map = ({
       const results = await Promise.all(coordinatePromises);
       
       const endTime = Date.now();
-      console.log(`⚡ 병렬 좌표 변환 완료: ${endTime - startTime}ms`);
+      console.log(`좌표 변환 완료: ${endTime - startTime}ms`);
 
       // 성공한 결과들로 마커 생성
       let addedCount = 0;
@@ -430,11 +447,6 @@ const Map = ({
           // 마커 클릭 이벤트
           window.kakao.maps.event.addListener(marker, 'click', () => {
             if (onRestaurantSelect) {
-              console.log(`🎯 마커 클릭: ${restaurant.name}`, {
-                hasImages: !!restaurant.images,
-                imagesLength: restaurant.images?.length,
-                firstImage: restaurant.images?.[0]
-              });
               onRestaurantSelect(restaurant);
             }
           });
@@ -450,19 +462,15 @@ const Map = ({
             lng: coordinates.lng
           });
           
-          console.log(`✅ 마커 추가: ${restaurant.name} (${coordinates.lat}, ${coordinates.lng})`);
-        } else {
-          console.log(`❌ 좌표 변환 실패: ${restaurant.name}`);
         }
       });
       
-      console.log(`🎉 총 ${addedCount}개 마커 초기화 완료 (${endTime - startTime}ms)`);
+      console.log(`마커 초기화 완료: ${addedCount}개 (${endTime - startTime}ms)`);
       setIsLoadingMarkers(false);
       setMarkersLoaded(true);
       
       // 좌표가 있는 음식점들을 부모에게 전달
       if (onRestaurantsWithCoords) {
-        console.log(`좌표가 변환된 음식점 ${restaurantsWithCoords.length}개를 부모에게 전달`);
         onRestaurantsWithCoords(restaurantsWithCoords);
       }
       
@@ -481,11 +489,8 @@ const Map = ({
   // 필터링된 마커들만 표시/숨김
   const filterMarkers = useCallback((filteredRestaurants) => {
     if (!mapInstance.current || !checkKakaoAPI()) {
-      console.log('지도 초기화 또는 API 확인 실패');
       return;
     }
-
-    console.log('마커 필터링 시작, 필터링된 레스토랑 수:', filteredRestaurants.length);
     
     // 모든 마커를 숨김
     allMarkersRef.current.forEach(marker => {
@@ -510,7 +515,6 @@ const Map = ({
     });
 
     markersRef.current = visibleMarkers;
-    console.log(`필터링 완료: ${visibleMarkers.length}개 마커 표시`);
   }, [checkKakaoAPI]);
 
   // 지도 초기화 및 마커 초기화 (한 번만 실행)
@@ -518,16 +522,17 @@ const Map = ({
     const initMapWithRetry = () => {
       if (checkKakaoAPI()) {
         initMap();
+        // 지도 초기화 후 마커 초기화
         setTimeout(() => {
           initializeAllMarkers();
-        }, 100);
+        }, 500); // 지도가 완전히 로드될 때까지 대기
       } else {
         setTimeout(initMapWithRetry, 100);
       }
     };
 
     // DOM이 완전히 렌더링된 후 실행
-    const timer = setTimeout(initMapWithRetry, 100);
+    const timer = setTimeout(initMapWithRetry, 200);
 
     // ResizeObserver로 컨테이너 크기 변화 감지
     const resizeObserver = new ResizeObserver(() => {
@@ -576,6 +581,7 @@ const Map = ({
       
       {isLoadingMarkers && (
         <LoadingOverlay>
+          <LoadingSpinner />
           <LoadingText>🍽️ 미슐랭 레스토랑 위치를 찾는 중이에요</LoadingText>
           <LoadingProgress>
             {restaurants.length}개 레스토랑의 정확한 좌표를 변환하고 있어요
